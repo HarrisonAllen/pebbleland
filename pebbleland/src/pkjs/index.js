@@ -1,5 +1,12 @@
 var url = "http://10.0.0.47:5001";
 
+// Import the Clay package
+var Clay = require('pebble-clay');
+// Load our Clay configuration file
+var clayConfig = require('./config');
+// Initialize Clay
+var clay = new Clay(clayConfig);
+
 // request data from url
 var xhrGetRequest = function (url, callback) {
 	var xhr = new XMLHttpRequest();
@@ -25,34 +32,35 @@ function mainPage() {
 	xhrGetRequest(url,
 		function(responseText) {
             console.log('received data: ' + responseText);
-
-			// var dictionary = {
-			// 	'TEMPERATURE': temperature,
-			// 	'CONDITIONS': conditions
-			// };
-			// Pebble.sendAppMessage(dictionary,
-			// 	function(e) {
-			// 		console.log('Weather info sent to Pebble successfully!');
-			// 	},
-			// 	function(e) {
-			// 		console.log('Error sending weather info to Pebble!');
-			// 	}
-			// );
 		}
 	);
 }
 
-function login() {
+function login(username) {
     var login_info = {
         'watch_token': Pebble.getAccountToken(),
         'account_token': Pebble.getWatchToken(),
-        'username': 'LinkSky'
+        'username': username
     };
     xhrPostRequest(url + "/login", login_info,
         function(responseText) {
             console.log('received data: ' + responseText);
             var json = JSON.parse(responseText);
             console.log('received message: ', json.message);
+            
+			var dictionary = {
+				'Message': json.message,
+                'LoginSuccessful': json.login_successful ? 1 : 0,
+                'Username': json.username
+			};
+			Pebble.sendAppMessage(dictionary,
+				function(e) {
+					console.log('Message sent to Pebble successfully!');
+				},
+				function(e) {
+					console.log('Error sending message to Pebble!');
+				}
+			);
         }
     );
 }
@@ -74,9 +82,6 @@ function pokePebble() {
 Pebble.addEventListener('ready',
 	function(e) {
 		console.log('PebbleKit JS ready!');
-
-		// Get initial data
-		login();
 	}
 );
 
@@ -85,5 +90,9 @@ Pebble.addEventListener('appmessage',
 	function(e) {
 		console.log('AppMessage received!');
 		var dict = e.payload;
+
+        if (dict['RequestLogin']) {
+            login(dict['Username']);
+        }
 	}
 );
