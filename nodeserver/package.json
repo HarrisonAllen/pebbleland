@@ -1,0 +1,9 @@
+{
+    "name": "web-server",  
+    "main": "app.js",
+    "type": "commmoduleonjs",
+    "dependencies": {
+        "ws": "^8.18.0",
+        "sqlite3": "^5.1.7"
+    }
+}
