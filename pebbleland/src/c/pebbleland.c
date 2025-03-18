@@ -7,6 +7,7 @@ static StatusBarLayer *s_status_bar;
 static TextLayer *s_main_text_layer;
 
 static bool s_logged_in = false;
+static bool s_connected = false;
 
 // Define settings struct
 typedef struct ClaySettings {
@@ -22,6 +23,34 @@ static void login() {
   if (result == APP_MSG_OK) {
     // what to do
     dict_write_uint8(iter, MESSAGE_KEY_RequestLogin, 1);
+    dict_write_cstring(iter, MESSAGE_KEY_Username, settings.Username);
+
+    // Send the message
+    result = app_message_outbox_send();
+  }
+}
+
+static void connect() {
+  DictionaryIterator *iter;
+  AppMessageResult result = app_message_outbox_begin(&iter);
+
+  if (result == APP_MSG_OK) {
+    // what to do
+    dict_write_uint8(iter, MESSAGE_KEY_Connect, 1);
+    dict_write_cstring(iter, MESSAGE_KEY_Username, settings.Username);
+
+    // Send the message
+    result = app_message_outbox_send();
+  }
+}
+
+static void disconnect() {
+  DictionaryIterator *iter;
+  AppMessageResult result = app_message_outbox_begin(&iter);
+
+  if (result == APP_MSG_OK) {
+    // what to do
+    dict_write_uint8(iter, MESSAGE_KEY_Disconnect, 1);
     dict_write_cstring(iter, MESSAGE_KEY_Username, settings.Username);
 
     // Send the message
@@ -84,9 +113,10 @@ static void outbox_sent_callback(DictionaryIterator *iterator, void *context) {
 
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
   if (!s_logged_in) {
-    login();
+    connect();
   } else {
-    create_scroll_window("There's nothing here yet \U0001F605");
+    // create_scroll_window("Connecting to websocket...");
+    // connect();
   }
 }
 
@@ -165,6 +195,7 @@ static void init() {
 }
 
 static void deinit() {
+  disconnect();
   window_destroy(s_main_window);
 }
 

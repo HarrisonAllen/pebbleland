@@ -29,7 +29,9 @@
       "RequestLogin",
       "LoginSuccessful",
       "Username",
-      "NewUsername"
+      "NewUsername",
+      "Connect",
+      "Disconnect"
     ],
     "resources": {
       "media": []
