@@ -6,6 +6,7 @@ const fs = require('fs');
 const db_name = "database/users.db";
 const max_username_len = 20;
 const event_codes = {
+    "OK": 1000,
     "LOGIN_FAILURE": 3000,
 }
 
@@ -51,10 +52,12 @@ async function handle_message(data) {
     var response;
     if (request == 'login') {
         response = await login(message);
-        console.log("login complete?")
         if (response["close"]) {
             response["code"] = event_codes["LOGIN_FAILURE"];
         }
+    }
+    if (request == 'close') {
+        response = {'close': true, 'code': event_codes["OK"]};
     }
     if (request == 'click') {
         clicks += 1;
@@ -89,7 +92,6 @@ async function db_get_one(database, sql, params) {
                 console.log("Query failed: ", sql);
                 return resolve(undefined);
             } else {
-                console.log("found row...", row, " from ", sql);
                 return resolve(row);
             }
         });
