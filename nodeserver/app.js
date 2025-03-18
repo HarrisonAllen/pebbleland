@@ -11,11 +11,14 @@ const event_codes = {
 }
 
 var clicks = 0;
+var last_click = "No one!";
+var users = {};
+
 
 
 wss.on("connection", async function connection(ws) {
     console.log('New WebSocket connection established. Requesting login...');
-    ws.send(JSON.stringify({"login_request": true}));
+    ws.send(JSON.stringify({"reason": "login_request"}));
 
     // WebSocket handling logic
     ws.on("message", async function message(data, isBinary) {
@@ -24,18 +27,20 @@ wss.on("connection", async function connection(ws) {
         // Handle WebSocket messages
         
         console.log("Message received", message)
-        var response = await handle_message(message);
+        var response = await handle_message(message, ws);
         var to_send = JSON.stringify(response);
         if (response["close"]) {
             ws.close(event_codes[response["code"]], to_send);
         } else {
             if (response["broadcast"]) {
+                console.log('Broadcasting: ', to_send);
                 wss.clients.forEach(function each(client) {
                     if (client.readyState === WebSocket.OPEN) {
                         client.send(to_send);
                     }
                 });
             } else {
+                console.log('Sending: ', to_send);
                 ws.send(to_send);
             }
         }
@@ -43,10 +48,13 @@ wss.on("connection", async function connection(ws) {
     
     ws.on("close", async function close() {
         console.log("Connection closed");
+        if (users[ws.username]) {
+            delete users[ws.username];
+        }
     });
 });
 
-async function handle_message(data) {
+async function handle_message(data, ws) {
     var message = JSON.parse(data);
     var request = message['request'];
     var response;
@@ -55,13 +63,26 @@ async function handle_message(data) {
         if (response["close"]) {
             response["code"] = event_codes["LOGIN_FAILURE"];
         }
+        if (response["login_success"]) {
+            ws.username = response["username"];
+            users[ws.username] = ws;
+        }
+        response["clicks"] = clicks;
+        response["source"] = last_click;
     }
     if (request == 'close') {
         response = {'close': true, 'code': event_codes["OK"]};
     }
     if (request == 'click') {
-        clicks += 1;
-        response = {"message": `${clicks} clicks`, "broadcast": true};
+        if (message['button'] == 'up') {
+            clicks += 1;
+        } else if (message['button'] == 'down') {
+            clicks -= 1;
+        } else {
+            clicks = 0;
+        }
+        last_click = ws.username;
+        response = {"reason": "click", "clicks": clicks, "source": last_click, "broadcast": true};
     }
 
     return response
@@ -81,7 +102,6 @@ async function run_db_command(command) {
 
 async function create_user_table() {
     run_db_command('CREATE TABLE IF NOT EXISTS users (account TEXT, watch TEXT, username TEXT)');
-    console.log("Created table or database?");
 }
 
 // assumes db is open
@@ -139,6 +159,7 @@ async function login(message) {
         if (user_info) {
             var db_username = user_info['username'];
             if (db_username === username) {
+                response["reason"] = "login_success";
                 response["login_success"] = true;
                 response["username"] = username;
                 response["message"] = `Logged in as ${username}.`
@@ -148,6 +169,7 @@ async function login(message) {
                     response["message"] = `Login failed.\nCould not update username: \"${username}\" is already taken.`
                 } else {
                     db_run(db, 'UPDATE users SET username = ? WHERE account = ? AND watch = ?', [username, account, watch]);
+                    response["reason"] = "login_success"
                     response["login_success"] = true;
                     response["username"] = username;
                     response["message"] = `Login successful.\nUpdated username from ${db_username} to ${username}`
@@ -159,6 +181,7 @@ async function login(message) {
                 response["message"] = `Login failed.\nCould not create account: \"${username}\" is already taken.`
             } else {
                 db_run(db, 'INSERT INTO users VALUES (?, ?, ?)', [account, watch, username]);
+                response["reason"] = "login_success"
                 response["login_success"] = true;
                 response["username"] = username;
                 response["message"] = `Login successful.\nCreated account for ${username}`
