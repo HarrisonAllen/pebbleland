@@ -62,25 +62,42 @@ function send_to_server(dictionary) {
 
 function login(username) {
     var login_info = {
+        'request': 'login',
         'watch_token': Pebble.getAccountToken(),
         'account_token': Pebble.getWatchToken(),
         'username': username,
-        // 'username': 'tester',
-        'request': 'login'
+        // 'username': 'Emulator',
     };
 
     send_to_server(login_info);
 }
 
+function click(button) {
+    var click_info = {
+        'request': 'click',
+        'button': button
+    };
+    send_to_server(click_info);
+}
+
 function handle_event(event) {
     var dictionary;
-    if (event["login_request"]) {
+    if (event["reason"] == "login_request") {
         login(set_username);
-    } else if (event["login_success"]) {
+    } else if (event["reason"] == "login_success") {
         dictionary = {
-            'Message': event["message"],
+            // 'Message': event["message"],
             'LoginSuccessful': true,
-            'Username': event["username"]
+            'Username': event["username"],
+            'Clicks': event["clicks"],
+            'Source': event["source"]
+        };
+        console.log(event["message"]);
+        send_to_pebble(dictionary);
+    } else if (event["reason"] == "click") {
+        dictionary = {
+            'Clicks': event["clicks"],
+            'Source': event["source"]
         };
         send_to_pebble(dictionary);
     } else {
@@ -119,6 +136,7 @@ function connect_websocket() {
                     'Message': event.reason,
                     'LoginSuccessful': false
                 };
+                send_to_pebble(dictionary);
             }
         } else {
             // e.g. server process killed or network down
@@ -177,6 +195,9 @@ Pebble.addEventListener('appmessage',
         }
         if (dict['Disconnect']) {
             disconnect_websocket();
+        }
+        if (dict['Click']) {
+            click(dict['Button']);
         }
 	}
 );

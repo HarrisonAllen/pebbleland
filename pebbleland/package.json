@@ -31,7 +31,11 @@
       "Username",
       "NewUsername",
       "Connect",
-      "Disconnect"
+      "Disconnect",
+      "Clicks",
+      "Click",
+      "Button",
+      "Source"
     ],
     "resources": {
       "media": []
