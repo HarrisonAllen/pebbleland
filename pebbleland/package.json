@@ -35,10 +35,28 @@
       "Clicks",
       "Click",
       "Button",
-      "Source"
+      "Source",
+      "PlayerX",
+      "PlayerY",
+      "Location",
+      "Poll",
+      "UserConnected",
+      "UserDisconnected",
+      "BroadcastConnect"
     ],
     "resources": {
-      "media": []
+      "media": [
+        {
+          "type": "raw",
+          "name": "PLAYER_TILESHEET",
+          "file": "sprites/player_one_sprite_tilesheet.bin"
+        },
+        {
+          "type": "raw",
+          "name": "DEFAULT_TILESHEET",
+          "file": "sprites/default_sprite_tilesheet.bin"
+        }
+      ]
     }
   }
 }

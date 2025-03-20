@@ -1,7 +1,31 @@
 #pragma once
+#include "../pebble-gbc-graphics-advanced/pebble-gbc-graphics-advanced.h"
 
 #define SCROLL_FONT FONT_KEY_GOTHIC_18
 #define SCROLL_TEXT_LEN 200
 
 #define USERNAME_MAX_LEN 20
 #define SETTINGS_KEY 1
+
+// Gameplay
+#define MAX_PLAYERS 10
+
+// Players
+#define PLAYER_VRAM 1
+#define PLAYER_SPRITE_TILE_WIDTH 2 // 2 tiles, 16 px
+#define PLAYER_SPRITE_TILE_HEIGHT 3 // 3 tiles, 24 px
+#define PLAYER_SPRITE_NUM_TILES (PLAYER_SPRITE_TILE_WIDTH * PLAYER_SPRITE_TILE_HEIGHT)
+#define PLAYER_ONE_NUM_SPRITES 4
+#define PLAYER_ONE_NUM_TILES (PLAYER_SPRITE_NUM_TILES * PLAYER_ONE_NUM_SPRITES)
+#define PLAYER_SPRITE_WIDTH (PLAYER_SPRITE_TILE_WIDTH * GBC_TILE_WIDTH)
+#define PLAYER_SPRITE_HEIGHT (PLAYER_SPRITE_TILE_HEIGHT * GBC_TILE_HEIGHT)
+#define PLAYER_STEP_SIZE 16
+
+// Graphics
+#define NUM_VRAMS 2
+#define NUM_BACKGROUNDS 1
+#if defined (PBL_ROUND)
+    #define SCREEN_BOUNDS GRect(18, 18, 144, 144)
+#else
+    #define SCREEN_BOUNDS GRect(0, STATUS_BAR_LAYER_HEIGHT + 4, 144, 144)
+#endif

@@ -1,4 +1,4 @@
-var base_url = "10.0.0.47:5001";
+var base_url = "10.0.0.21:5001";
 
 // Import the Clay package
 var Clay = require('pebble-clay');
@@ -47,10 +47,10 @@ function mainPage() {
 function send_to_pebble(dictionary) {
     Pebble.sendAppMessage(dictionary,
         function(e) {
-            console.log('Message sent to Pebble successfully!');
+            console.log('Message sent to Pebble successfully!', JSON.stringify(dictionary));
         },
         function(e) {
-            console.log('Error sending message to Pebble!');
+            console.log('Error sending message to Pebble!', JSON.stringify(dictionary));
         }
     );
 }
@@ -80,6 +80,31 @@ function click(button) {
     send_to_server(click_info);
 }
 
+function broadcast_location(x, y) {
+    var location_info = {
+        'request': 'location',
+        'x': x,
+        'y': y
+    };
+    send_to_server(location_info);
+}
+
+function broadcast_connect(x, y) {
+    var connect_info = {
+        'request': 'user_connected',
+        'x': x,
+        'y': y,
+    };
+    send_to_server(connect_info);
+}
+
+function poll() {
+    var connect_info = {
+        'request': 'poll_users',
+    };
+    send_to_server(connect_info);
+}
+
 function handle_event(event) {
     var dictionary;
     if (event["reason"] == "login_request") {
@@ -98,6 +123,42 @@ function handle_event(event) {
         dictionary = {
             'Clicks': event["clicks"],
             'Source': event["source"]
+        };
+        send_to_pebble(dictionary);
+    } else if (event["reason"] == "user_connected") {
+        dictionary = {
+            'UserConnected': true,
+            'Username': event["source"],
+            'PlayerX': event["x"],
+            'PlayerY': event["y"]
+        };
+        send_to_pebble(dictionary);
+    } else if (event["reason"] == "user_disconnected") {
+        dictionary = {
+            'UserDisconnected': true,
+            'Username': event["source"],
+        };
+        send_to_pebble(dictionary);
+    } else if (event["reason"] == "polled_users") {
+        var users = event["users"];
+        console.log("Polling users: ", JSON.stringify(users));
+        for (var user in users) {
+            console.log("User:", user);
+            console.log("User info", JSON.stringify(users[user]));
+            dictionary = {
+                'UserConnected': true,
+                'Username': user,
+                'PlayerX': users[user]['x'],
+                'PlayerY': users[user]['y']
+            };
+            send_to_pebble(dictionary);
+        };
+    } else if (event["reason"] == "location") {
+        dictionary = {
+            'Location': true,
+            'Username': event["source"],
+            'PlayerX': event["x"],
+            'PlayerY': event["y"]
         };
         send_to_pebble(dictionary);
     } else {
@@ -120,10 +181,8 @@ function connect_websocket() {
     
     socket.onmessage = function(event, isBinary) {
         var text = event.data instanceof ArrayBuffer ? event.data.toString() : event.data;
-        console.log("received message: ", text.toString());
+        console.log("received server message: ", text.toString());
         var json = JSON.parse(text);
-
-        console.log('Received websocket message: ' + JSON.stringify(json));
 
         handle_event(json);
     };
@@ -183,8 +242,8 @@ Pebble.addEventListener('ready',
 // Listen for when an AppMessage is received
 Pebble.addEventListener('appmessage',
 	function(e) {
-		console.log('AppMessage received!');
-		var dict = e.payload;
+        var dict = e.payload;
+		console.log('AppMessage received!', JSON.stringify(dict));
 
         if (dict['RequestLogin']) {
             login(dict['Username']);
@@ -199,6 +258,19 @@ Pebble.addEventListener('appmessage',
         if (dict['Click']) {
             click(dict['Button']);
         }
+        if (dict['BroadcastConnect']) {
+            broadcast_connect(dict['PlayerX'], dict['PlayerY']);
+        }
+        if (dict['Location']) {
+            broadcast_location(dict['PlayerX'], dict['PlayerY']);
+        }
+        if (dict['Poll']) {
+            poll();
+        }
+        // {
+        //     console.log('Unsupported request:', JSON.stringify(dict));
+        // }// Poll users
+        // 
 	}
 );
 
