@@ -27,5 +27,5 @@
 #if defined (PBL_ROUND)
     #define SCREEN_BOUNDS GRect(18, 18, 144, 144)
 #else
-    #define SCREEN_BOUNDS GRect(0, STATUS_BAR_LAYER_HEIGHT + 4, 144, 144)
+    #define SCREEN_BOUNDS GRect(0, STATUS_BAR_LAYER_HEIGHT + 4, 112, 144)
 #endif

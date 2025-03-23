@@ -2,3 +2,4 @@ build/
 node_modules/
 .vscode/settings.json
 database/
+__pycache__/

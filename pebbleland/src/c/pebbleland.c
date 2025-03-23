@@ -8,7 +8,7 @@
 
 static Window *s_main_window;
 static StatusBarLayer *s_status_bar;
-static TextLayer *s_main_text_layer, *s_clicks_text_layer;
+static TextLayer *s_main_text_layer, *s_sub_text_layer;
 static GBC_Graphics *s_gbc_graphics;
 static Game *s_game;
 
@@ -31,6 +31,15 @@ static void save_settings() {
 
 }
 
+static void start_game() {
+  Game_start(s_game, settings.Username);
+  text_layer_set_text(s_sub_text_layer, "");
+  text_layer_set_text(s_main_text_layer, "");
+  // TODO: request current users
+  
+  s_state = S_PLAY;
+}
+
 static void inbox_received_callback(DictionaryIterator *iterator, void *context) {
   // Message
   Tuple *message_t = dict_find(iterator, MESSAGE_KEY_Message);
@@ -45,13 +54,13 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
         Tuple *username_t = dict_find(iterator, MESSAGE_KEY_Username);
         if (username_t) {
           strcpy(settings.Username, username_t->value->cstring);
-          static char welcome_message[40];
-          snprintf(welcome_message, 40, "Welcome, %s!", settings.Username);
-          text_layer_set_text(s_main_text_layer, welcome_message);
-          text_layer_set_text(s_clicks_text_layer, "Press select to start");
-          APP_LOG(APP_LOG_LEVEL_DEBUG, welcome_message);
+          // static char welcome_message[40];
+          // snprintf(welcome_message, 40, "Welcome, %s!", settings.Username);
+          // text_layer_set_text(s_main_text_layer, welcome_message);
+          // text_layer_set_text(s_sub_text_layer, "Press select to start");
+          // APP_LOG(APP_LOG_LEVEL_DEBUG, welcome_message);
+          start_game();
         }
-        s_state = S_MAIN;
       }
     }
   }
@@ -71,7 +80,7 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
   //   } else {
   //     snprintf(clicks_message, 40, "Last click:\n\tUNKNOWN\nClicks: %d", s_clicks);
   //   }
-  //   text_layer_set_text(s_clicks_text_layer, clicks_message);
+  //   text_layer_set_text(s_sub_text_layer, clicks_message);
   // }
 
   if (s_state == S_PLAY) {
@@ -123,12 +132,6 @@ static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
       connect(settings.Username);
       break;
     case S_MAIN:
-      Game_start(s_game, settings.Username);
-      text_layer_set_text(s_clicks_text_layer, "");
-      text_layer_set_text(s_main_text_layer, "");
-      // TODO: request current users
-      
-      s_state = S_PLAY;
       break;
     case S_PLAY:
       Game_select_handler(s_game);
@@ -178,25 +181,27 @@ static void main_window_load(Window *window) {
   s_gbc_graphics = GBC_Graphics_ctor(s_main_window, NUM_VRAMS, NUM_BACKGROUNDS);
   GBC_Graphics_set_screen_bounds(s_gbc_graphics, SCREEN_BOUNDS);
   GBC_Graphics_lcdc_set_enabled(s_gbc_graphics, false);
-  s_game = Game_init(s_gbc_graphics);
+  s_game = Game_init(s_gbc_graphics, s_main_window);
 
   // Main text
-  s_main_text_layer = text_layer_create(GRect(bounds.origin.x, bounds.origin.y + STATUS_BAR_LAYER_HEIGHT, bounds.size.w, bounds.size.h - STATUS_BAR_LAYER_HEIGHT));
+  s_main_text_layer = text_layer_create(GRect(bounds.origin.x, bounds.origin.y + STATUS_BAR_LAYER_HEIGHT + 30, bounds.size.w, bounds.size.h - STATUS_BAR_LAYER_HEIGHT));
   GFont main_font = fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD);
 
   text_layer_set_overflow_mode(s_main_text_layer, GTextOverflowModeWordWrap);
+  text_layer_set_text_alignment(s_main_text_layer, GTextAlignmentCenter);
   text_layer_set_font(s_main_text_layer, main_font);
-  text_layer_set_text(s_main_text_layer, "Press select to login");
+  text_layer_set_text(s_main_text_layer, "PEBBLELAND");
   text_layer_set_background_color(s_main_text_layer, GColorClear);
 
-  // Clicks text
-  s_clicks_text_layer = text_layer_create(GRect(bounds.origin.x, bounds.origin.y + bounds.size.h - 90, bounds.size.w, 90));
-  GFont clicks_font = fonts_get_system_font(FONT_KEY_GOTHIC_28);
+  // Sub text
+  s_sub_text_layer = text_layer_create(GRect(bounds.origin.x, bounds.origin.y + bounds.size.h - 60, bounds.size.w, 60));
+  GFont sub_font = fonts_get_system_font(FONT_KEY_GOTHIC_18);
 
-  text_layer_set_overflow_mode(s_clicks_text_layer, GTextOverflowModeWordWrap);
-  text_layer_set_font(s_clicks_text_layer, clicks_font);
-  text_layer_set_background_color(s_clicks_text_layer, GColorClear);
-  // text_layer_set_text(s_clicks_text_layer, "Clicks: 0");
+  text_layer_set_overflow_mode(s_sub_text_layer, GTextOverflowModeWordWrap);
+  text_layer_set_text_alignment(s_sub_text_layer, GTextAlignmentCenter);
+  text_layer_set_font(s_sub_text_layer, sub_font);
+  text_layer_set_background_color(s_sub_text_layer, GColorClear);
+  text_layer_set_text(s_sub_text_layer, "Press SELECT to log in");
 
   // Create the StatusBarLayer
   s_status_bar = status_bar_layer_create();
@@ -208,7 +213,7 @@ static void main_window_load(Window *window) {
 
   // Add to Window
   layer_add_child(window_layer, text_layer_get_layer(s_main_text_layer));
-  layer_add_child(window_layer, text_layer_get_layer(s_clicks_text_layer));
+  layer_add_child(window_layer, text_layer_get_layer(s_sub_text_layer));
   layer_add_child(window_layer, status_bar_layer_get_layer(s_status_bar));
 }
 
@@ -216,7 +221,7 @@ static void main_window_unload(Window *window) {
   // Destroy the StatusBarLayer
   status_bar_layer_destroy(s_status_bar);
   text_layer_destroy(s_main_text_layer);
-  text_layer_destroy(s_clicks_text_layer);
+  text_layer_destroy(s_sub_text_layer);
   Game_destroy(s_game);
   GBC_Graphics_destroy(s_gbc_graphics);
   disconnect(settings.Username);

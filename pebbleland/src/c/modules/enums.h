@@ -9,10 +9,10 @@ typedef enum {
 } AppState;
 
 typedef enum {
-    D_UP,
-    D_RIGHT,
     D_DOWN,
     D_LEFT,
+    D_UP,
+    D_RIGHT,
     D_MAX
 } Direction;
 

@@ -55,6 +55,41 @@
           "type": "raw",
           "name": "DEFAULT_TILESHEET",
           "file": "sprites/default_sprite_tilesheet.bin"
+        },
+        {
+            "type": "bitmap", 
+            "name": "ICON_DOWN", 
+            "file": "icons/icon_down.png"
+        },
+        {
+            "type": "bitmap", 
+            "name": "ICON_LEFT", 
+            "file": "icons/icon_left.png"
+        },
+        {
+            "type": "bitmap", 
+            "name": "ICON_UP", 
+            "file": "icons/icon_up.png"
+        },
+        {
+            "type": "bitmap", 
+            "name": "ICON_RIGHT", 
+            "file": "icons/icon_right.png"
+        },
+        {
+            "type": "bitmap", 
+            "name": "ICON_STOP", 
+            "file": "icons/icon_stop.png"
+        },
+        {
+            "type": "bitmap", 
+            "name": "ICON_TURN_LEFT", 
+            "file": "icons/icon_turn_left.png"
+        },
+        {
+            "type": "bitmap", 
+            "name": "ICON_TURN_RIGHT", 
+            "file": "icons/icon_turn_right.png"
         }
       ]
     }

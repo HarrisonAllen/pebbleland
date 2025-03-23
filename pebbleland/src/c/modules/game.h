@@ -10,11 +10,18 @@ typedef struct _game Game;
 struct _game {
     Player *players[MAX_PLAYERS];
     GBC_Graphics *graphics;
+    Window *window;
+    ActionBarLayer *action_bar;
+    GBitmap *icon_up, *icon_middle, *icon_down;
 };
 
-Game *Game_init(GBC_Graphics *graphics);
+Game *Game_init(GBC_Graphics *graphics, Window *window);
 
 void Game_destroy(Game *game);
+
+void Game_set_direction_icon(Game *game, Direction dir);
+
+void Game_setup_action_bar(Game *game);
 
 void Game_start(Game *game, char *username);
     
