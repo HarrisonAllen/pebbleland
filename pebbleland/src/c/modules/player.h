@@ -13,6 +13,7 @@ struct _player {
     int y;
     Direction direction;
     int number;
+    int sprite_number;
     int tile_offset;
     int num_tiles;
     uint8_t palette[GBC_PALETTE_NUM_BYTES];

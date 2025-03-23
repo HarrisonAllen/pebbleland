@@ -308,7 +308,7 @@ static void render_graphics(GBC_Graphics *self, Layer *layer, GContext *ctx) {
         num_sprites_on_this_line = 0;
         for (sprite_id = 0; sprite_id < (GBC_NUM_SPRITES & BOOL_MASK[(self->lcdc & GBC_LCDC_SPRITE_ENABLE_FLAG) != 0]); sprite_id++) {
             sprite = &self->oam[sprite_id * GBC_SPRITE_NUM_BYTES];
-            sprite_x = sprite[GBC_OAM_X_POS_BYTE] + (((bool)(sprite[GBC_OAM_EXTRA_BYTE] & GBC_OAM_SPRITE_UPPER_X_BIT_FLAG)) << 8) - GBC_SPRITE_OFFSET_X;
+            sprite_x = sprite[GBC_OAM_X_POS_BYTE] + (((bool)(sprite[GBC_OAM_EXTRA_BYTE] & GBC_OAM_SPRITE_UPPER_X_BIT_FLAG)) << 8) - GBC_SPRITE_OFFSET_X + self->screen_x_origin;
             sprite_y = sprite[GBC_OAM_Y_POS_BYTE] + (((bool)(sprite[GBC_OAM_EXTRA_BYTE] & GBC_OAM_SPRITE_UPPER_Y_BIT_FLAG)) << 8) - GBC_SPRITE_OFFSET_Y;
                 sprite_w = (1 + ((sprite[GBC_OAM_DIMS_BYTE] & GBC_OAM_SPRITE_WIDTH_MASK) >> GBC_OAM_SPRITE_WIDTH_SHIFT)) << 3; // sprite_width * tile_width
                 sprite_h = (1 + ((sprite[GBC_OAM_DIMS_BYTE] & GBC_OAM_SPRITE_HEIGHT_MASK) >> GBC_OAM_SPRITE_HEIGHT_SHIFT)) << 3; // sprite_height * tile_height
@@ -473,7 +473,7 @@ static void render_graphics(GBC_Graphics *self, Layer *layer, GContext *ctx) {
                 sprite = &self->oam[sprite_id*GBC_SPRITE_NUM_BYTES];
 
                 // Check if the pixel we're rendering is within the sprite
-                sprite_x = sprite[GBC_OAM_X_POS_BYTE] + (((bool)(sprite[GBC_OAM_EXTRA_BYTE] & GBC_OAM_SPRITE_UPPER_X_BIT_FLAG)) << 8) - GBC_SPRITE_OFFSET_X;
+                sprite_x = sprite[GBC_OAM_X_POS_BYTE] + (((bool)(sprite[GBC_OAM_EXTRA_BYTE] & GBC_OAM_SPRITE_UPPER_X_BIT_FLAG)) << 8) - GBC_SPRITE_OFFSET_X + self->screen_x_origin;
                 sprite_y = sprite[GBC_OAM_Y_POS_BYTE] + (((bool)(sprite[GBC_OAM_EXTRA_BYTE] & GBC_OAM_SPRITE_UPPER_Y_BIT_FLAG)) << 8) - GBC_SPRITE_OFFSET_Y;
                 sprite_w = (1 + ((sprite[GBC_OAM_DIMS_BYTE] & GBC_OAM_SPRITE_WIDTH_MASK) >> GBC_OAM_SPRITE_WIDTH_SHIFT)) << 3; // sprite_width * tile_width
                 sprite_h = (1 + ((sprite[GBC_OAM_DIMS_BYTE] & GBC_OAM_SPRITE_HEIGHT_MASK) >> GBC_OAM_SPRITE_HEIGHT_SHIFT)) << 3; // sprite_height * tile_height

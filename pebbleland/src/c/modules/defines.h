@@ -8,7 +8,7 @@
 #define SETTINGS_KEY 1
 
 // Gameplay
-#define MAX_PLAYERS 10
+#define MAX_PLAYERS 8
 
 // Players
 #define PLAYER_VRAM 1
@@ -27,5 +27,5 @@
 #if defined (PBL_ROUND)
     #define SCREEN_BOUNDS GRect(18, 18, 144, 144)
 #else
-    #define SCREEN_BOUNDS GRect(0, STATUS_BAR_LAYER_HEIGHT + 4, 112, 144)
+    #define SCREEN_BOUNDS GRect(2, STATUS_BAR_LAYER_HEIGHT + (168 - (144 + STATUS_BAR_LAYER_HEIGHT)) / 2, 112, 144)
 #endif

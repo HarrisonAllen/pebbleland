@@ -7,7 +7,7 @@
  * on the Pebble smartwatch, with some Game Boy Advance style modifications
  * @file pebble-gbc-graphics-advanced.h
  * @author Harrison Allen
- * @version 1.6.0 3/19/2025
+ * @version 1.5.1 3/23/2025
  * 
  * Questions? Feel free to send me an email at harrisonallen555@gmail.com
  */

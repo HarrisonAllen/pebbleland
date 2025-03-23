@@ -153,10 +153,23 @@ static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
   }
 }
 
+static void select_long_click_handler(ClickRecognizerRef recognizer, void *context) {
+  if (s_state == S_PLAY) {
+    Game_select_hold_handler(s_game);
+  }
+}
+
+static void select_long_click_release_handler(ClickRecognizerRef recognizer, void *context) {
+  if (s_state == S_PLAY) {
+    Game_select_release_handler(s_game);
+  }
+}
+
 static void click_config_provider(void *context) {
   window_single_click_subscribe(BUTTON_ID_SELECT, select_click_handler);
   window_single_click_subscribe(BUTTON_ID_UP, up_click_handler);
   window_single_click_subscribe(BUTTON_ID_DOWN, down_click_handler);
+  window_long_click_subscribe(BUTTON_ID_SELECT, 700, select_long_click_handler, select_long_click_release_handler);
 }
 
 static void default_settings() {  
@@ -174,6 +187,7 @@ static void load_settings() {
 static void main_window_load(Window *window) {
   Layer *window_layer = window_get_root_layer(window);
   GRect bounds = layer_get_bounds(window_layer);
+  window_set_background_color(s_main_window, GColorWhite);
 
   // GBC Graphics Layer
   // Note, this creator adds the layer to the window, meaning if it's fired

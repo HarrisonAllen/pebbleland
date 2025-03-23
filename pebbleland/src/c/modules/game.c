@@ -1,6 +1,7 @@
 #include "game.h"
 #include "palettes.h"
 #include "communication.h"
+#include "scroll_layer.h"
 
 const ActionBarLayerIconPressAnimation direction_to_action_bar_anim[] = {
     ActionBarLayerIconPressAnimationMoveDown,
@@ -61,9 +62,9 @@ void Game_setup_action_bar(Game *game) {
     action_bar_layer_set_click_config_provider(game->action_bar, window_get_click_config_provider(game->window));
     
     action_bar_layer_set_icon(game->action_bar, BUTTON_ID_UP, game->icon_up);
-    action_bar_layer_set_icon_press_animation(game->action_bar, BUTTON_ID_UP, ActionBarLayerIconPressAnimationMoveUp);
+    action_bar_layer_set_icon_press_animation(game->action_bar, BUTTON_ID_UP, ActionBarLayerIconPressAnimationMoveLeft);
     action_bar_layer_set_icon(game->action_bar, BUTTON_ID_DOWN, game->icon_down);
-    action_bar_layer_set_icon_press_animation(game->action_bar, BUTTON_ID_DOWN, ActionBarLayerIconPressAnimationMoveDown);
+    action_bar_layer_set_icon_press_animation(game->action_bar, BUTTON_ID_DOWN, ActionBarLayerIconPressAnimationMoveLeft);
     Game_set_direction_icon(game, game->players[0]->direction);
 
     action_bar_layer_add_to_window(game->action_bar, game->window);
@@ -72,6 +73,7 @@ void Game_setup_action_bar(Game *game) {
 void Game_start(Game *game, char *username) {
     // Load basic map
     GBC_Graphics_set_bg_palette_array(game->graphics, 0, BLANK_BG_PALETTE);
+    window_set_background_color(game->window, GColorBlack);
 
     // Load player one?
     // TODO: load these in via args instead of hardcoded like this
@@ -193,4 +195,13 @@ void Game_select_handler(Game *game) {
     Player_take_step(game->players[0]);
     broadcast_position(game->players[0]->x, game->players[0]->y);
     GBC_Graphics_render(game->graphics);
+}
+
+void Game_select_hold_handler(Game *game) {
+
+}
+
+void Game_select_release_handler(Game *game) {
+    // Open menu
+    create_scroll_window("Long press!");
 }

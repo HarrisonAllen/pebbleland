@@ -42,4 +42,8 @@ void Game_up_handler(Game *game);
 void Game_down_handler(Game *game);
 
 void Game_select_handler(Game *game);
+
+void Game_select_hold_handler(Game *game);
+
+void Game_select_release_handler(Game *game);
     
