@@ -3,11 +3,16 @@ var WebSocketServer = require('ws').Server
   , wss = new WebSocketServer({ port: 5001 });
 const fs = require('fs');
 
+// TODO: server tick (4 ticks?)
+// TODO: Only broadcast changes on server tick
+// TODO: make server send queue
+
 const db_name = "database/users.db";
 const max_username_len = 20;
 const event_codes = {
     "OK": 1000,
     "LOGIN_FAILURE": 3000,
+    "MISC_ERROR": 3001
 }
 
 var clicks = 0;
@@ -51,16 +56,15 @@ wss.on("connection", async function connection(ws) {
         console.log("Message received", message)
         var response = await handle_message(message, ws);
         var to_send = JSON.stringify(response);
+        if (response["broadcast"]) {
+            broadcast(to_send);
+        } else {
+            console.log('Sending:', to_send);
+            ws.send(to_send);
+        }
         if (response["close"]) {
             if (ws.readyState === WebSocket.OPEN) { // maybe error is closing on already closed socket?
                 ws.close(event_codes[response["code"]], to_send);
-            }
-        } else {
-            if (response["broadcast"]) {
-                broadcast(to_send);
-            } else {
-                console.log('Sending:', to_send);
-                ws.send(to_send);
             }
         }
     });
@@ -73,6 +77,12 @@ wss.on("connection", async function connection(ws) {
         if (users[ws.username]) {
             delete users[ws.username];
         }
+    });
+
+    ws.on("error", async function (event) {
+        console.log("Websocket error for user", ws.username, ". Closing connection...");
+        console.log("Provided error:", event);
+        ws.close(event_codes["MISC_ERROR"], "Websocket connection error");
     });
 });
 
@@ -175,7 +185,7 @@ async function login(message) {
         response["close"] = true;
         response["message"] = "Login failed.\nAccount token not provided.";
     }
-    if (username === undefined) {
+    if (username === undefined || username === "") {
         response["close"] = true;
         response["message"] = "Login failed.\nPlease set your username.";
     } else if (username.length > max_username_len) {
@@ -223,10 +233,13 @@ async function login(message) {
 
         db.close();
 
-        response["close"] = login_failed;
+        // response["close"] = login_failed;
 
-        return response;
+        
     }
 
+    console.log("Returning:", response);
+    
+    return response;
 
 }

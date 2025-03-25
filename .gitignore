@@ -3,3 +3,4 @@ node_modules/
 .vscode/settings.json
 database/
 __pycache__/
+.DS_Store
