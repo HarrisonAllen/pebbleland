@@ -1,6 +1,7 @@
 #include "main_menu.h"
 #include "../defines.h"
 #include "text_window.h"
+#include "user_menu.h"
 
 void MainMenu_window_load(Window *window) {
     MainMenu *main_menu = (MainMenu *) (window_get_user_data(window));
@@ -57,9 +58,7 @@ void MainMenu_callback(int index, void *ctx) {
         TextWindow_init("No settings yet...");
         layer_mark_dirty(simple_menu_layer_get_layer(main_menu->menu_layer));
     } else if (index == MENU_ITEM_USERS) {
-        main_menu->menu_items[MENU_ITEM_USERS].subtitle = "No users yet...";
-        TextWindow_init("No users yet...");
-        layer_mark_dirty(simple_menu_layer_get_layer(main_menu->menu_layer));
+        UserMenu_init(main_menu->players);
     } else if (index == MENU_ITEM_LOGOUT) {
         window_stack_pop_all(true);
     }
