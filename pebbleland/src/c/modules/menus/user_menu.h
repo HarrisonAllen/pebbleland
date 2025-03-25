@@ -11,7 +11,8 @@ struct _user_menu {
     void (*callback)(int );
     SimpleMenuLayer *menu_layer;
     SimpleMenuItem menu_items[MAX_PLAYERS];
-    SimpleMenuSection menu_sections[1];
+    SimpleMenuItem offline_placeholder_item[1];
+    SimpleMenuSection menu_sections[2];
     Player **players;
     UserMenuItem *user_menu_items[MAX_PLAYERS];
 };

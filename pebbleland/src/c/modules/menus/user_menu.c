@@ -61,13 +61,26 @@ void UserMenu_open_menu(UserMenu *user_menu) {
     }
     
     user_menu->menu_sections[0] = (SimpleMenuSection) {
+        .title = "Online",
         .num_items = menu_item_index,
         .items = user_menu->menu_items,
     };
 
+    user_menu->offline_placeholder_item[0] = (SimpleMenuItem) {
+        .title = "No offline users",
+        .subtitle = "...for now",
+    };
+    
+    user_menu->menu_sections[1] = (SimpleMenuSection) {
+        .title = "Offline",
+        .num_items = 1,
+        .items = user_menu->offline_placeholder_item,
+    };
+    
+
     GRect bounds = layer_get_bounds(window_get_root_layer(user_menu->window));
     
-    user_menu->menu_layer = simple_menu_layer_create(bounds, user_menu->window, user_menu->menu_sections, 1, (void *) user_menu);
+    user_menu->menu_layer = simple_menu_layer_create(bounds, user_menu->window, user_menu->menu_sections, 2, (void *) user_menu);
     
     layer_add_child(window_get_root_layer(user_menu->window), simple_menu_layer_get_layer(user_menu->menu_layer));
 }
