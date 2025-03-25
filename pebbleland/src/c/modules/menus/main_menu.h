@@ -2,6 +2,7 @@
 
 #include <pebble.h>
 #include "../player.h"
+#include "user_menu_item.h"
 
 typedef struct _main_menu MainMenu;
 struct _main_menu {
@@ -12,6 +13,7 @@ struct _main_menu {
     SimpleMenuItem menu_items[4];
     SimpleMenuSection menu_sections[1];
     Player **players;
+    UserMenuItem *user_menu_item;
 };
 
 MainMenu *MainMenu_init(Player **players);

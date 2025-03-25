@@ -66,4 +66,5 @@ TextWindow *TextWindow_init(char *text) {
 void TextWindow_destroy(TextWindow *text_window) {
   scroll_layer_destroy(text_window->scroll_layer);
   text_layer_destroy(text_window->text_layer);
+  free(text_window);
 }

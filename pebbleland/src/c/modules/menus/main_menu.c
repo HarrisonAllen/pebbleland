@@ -37,6 +37,8 @@ MainMenu *MainMenu_init(Player **players) { // TODO: add callback
 void MainMenu_destroy(MainMenu *main_menu) {
     if (main_menu->menu_layer != NULL)
         simple_menu_layer_destroy(main_menu->menu_layer);
+    if (main_menu->user_menu_item != NULL)
+        UserMenuItem_destroy(main_menu->user_menu_item);
     if (main_menu != NULL) {
         free(main_menu);
     }
@@ -64,11 +66,8 @@ void MainMenu_callback(int index, void *ctx) {
 }
 
 void MainMenu_open_menu(MainMenu *main_menu) {
-    main_menu->menu_items[MENU_ITEM_INFO] = (SimpleMenuItem) {
-        .title = main_menu->players[0]->username,
-        .subtitle = "Online",
-        .callback = MainMenu_callback
-    };
+    main_menu->user_menu_item = UserMenuItem_create(main_menu->players[0]->username, -1, MainMenu_callback);
+    main_menu->menu_items[MENU_ITEM_INFO] = main_menu->user_menu_item->menu_item;
     main_menu->menu_items[MENU_ITEM_SETTINGS] = (SimpleMenuItem) {
         .title = "Settings",
         .callback = MainMenu_callback
