@@ -41,27 +41,27 @@ void SettingsMenu_destroy(SettingsMenu *settings_menu) {
     }
 }
 
-void SettingsMenu_update_gyro(SettingsMenu *settings_menu) {
-    settings_menu->menu_items[MENU_ITEM_GYRO].subtitle = settings_menu->settings->Gyro ? "Enabled" : "Disabled";
+void SettingsMenu_update_tilt(SettingsMenu *settings_menu) {
+    settings_menu->menu_items[MENU_ITEM_TILT].subtitle = settings_menu->settings->Tilt ? "Enabled" : "Disabled";
     // layer_mark_dirty(simple_menu_layer_get_layer(settings_menu->menu_layer));
     layer_mark_dirty(window_get_root_layer(settings_menu->window));
 }
 
 void SettingsMenu_callback(int index, void *ctx) {
     SettingsMenu *settings_menu = (SettingsMenu *) (ctx);
-    if (index == MENU_ITEM_GYRO) {
-        settings_menu->settings->Gyro = !settings_menu->settings->Gyro;
+    if (index == MENU_ITEM_TILT) {
+        settings_menu->settings->Tilt = !settings_menu->settings->Tilt;
         save_settings(settings_menu->settings);
-        SettingsMenu_update_gyro(settings_menu);
+        SettingsMenu_update_tilt(settings_menu);
     }
 }
 
 void SettingsMenu_open_menu(SettingsMenu *settings_menu) {
-    settings_menu->menu_items[MENU_ITEM_GYRO] = (SimpleMenuItem) {
+    settings_menu->menu_items[MENU_ITEM_TILT] = (SimpleMenuItem) {
         .title = "Tilt Controls",
         .callback = SettingsMenu_callback
     };
-    SettingsMenu_update_gyro(settings_menu);
+    SettingsMenu_update_tilt(settings_menu);
 
     settings_menu->menu_sections[0] = (SimpleMenuSection) {
         .num_items = SETTINGS_MENU_NUM_ITEMS,

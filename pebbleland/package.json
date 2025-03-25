@@ -43,7 +43,7 @@
       "UserConnected",
       "UserDisconnected",
       "BroadcastConnect",
-      "Gyro"
+      "Tilt"
     ],
     "resources": {
       "media": [

@@ -43,4 +43,4 @@
 #define MENU_ITEM_LOGOUT 3
 // - Settings menu
 #define SETTINGS_MENU_NUM_ITEMS 1
-#define MENU_ITEM_GYRO 0
+#define MENU_ITEM_TILT 0
