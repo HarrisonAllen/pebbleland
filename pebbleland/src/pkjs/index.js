@@ -212,8 +212,8 @@ function connect_websocket() {
 function disconnect_websocket() {
     if (socket) {
         console.log('Closing websocket...');
-        send_to_server({"request": "close"});
-        // socket.close(); // This breaks server when sending from watch... idk man
+        // send_to_server({"request": "close"});
+        socket.close(); // This causes error on server, don't know why, don't care B) (aka just closing socket on error on server side)
     } else {
         console.log('Not connected to websocket!');
     }

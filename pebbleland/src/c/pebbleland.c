@@ -1,9 +1,10 @@
 #include <pebble.h>
-#include "modules/scroll_layer.h"
+#include "modules/menus/text_window.h"
 #include "modules/defines.h"
 #include "modules/enums.h"
 #include "modules/communication.h"
 #include "modules/game.h"
+#include "modules/settings.h"
 #include "pebble-gbc-graphics-advanced/pebble-gbc-graphics-advanced.h"
 
 static Window *s_main_window;
@@ -11,6 +12,7 @@ static StatusBarLayer *s_status_bar;
 static TextLayer *s_main_text_layer, *s_sub_text_layer;
 static GBC_Graphics *s_gbc_graphics;
 static Game *s_game;
+static AppTimer *s_frame_timer;
 
 static bool s_logged_in = false;
 static bool s_connected = false;
@@ -18,25 +20,22 @@ static AppState s_state = S_LOGIN;
 
 static int s_clicks = 0;
 
-// Define settings struct
-typedef struct ClaySettings {
-  char Username[USERNAME_MAX_LEN];
-} ClaySettings;
+static ClaySettings s_settings;
 
-static ClaySettings settings;
+// Save the s_settings to persistent storage
 
-// Save the settings to persistent storage
-static void save_settings() {
-  persist_write_data(SETTINGS_KEY, &settings, sizeof(settings));
-
+/* timer callback */
+static void frame_timer_handle(void* context) {
+  Game_step(s_game);
+  s_frame_timer = app_timer_register(FRAME_DURATION, frame_timer_handle, NULL);
 }
 
 static void start_game() {
-  Game_start(s_game, settings.Username);
+  Game_start(s_game);
   text_layer_set_text(s_sub_text_layer, "");
   text_layer_set_text(s_main_text_layer, "");
   // TODO: request current users
-  
+  app_timer_register(FRAME_DURATION, frame_timer_handle, NULL); 
   s_state = S_PLAY;
 }
 
@@ -44,7 +43,7 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
   // Message
   Tuple *message_t = dict_find(iterator, MESSAGE_KEY_Message);
   if (message_t) {
-    create_scroll_window(message_t->value->cstring);
+    TextWindow_init(message_t->value->cstring);
   }
 
   if (s_state == S_LOGIN) {
@@ -53,9 +52,10 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
       if (login_success_t->value->int32 == 1) {
         Tuple *username_t = dict_find(iterator, MESSAGE_KEY_Username);
         if (username_t) {
-          strcpy(settings.Username, username_t->value->cstring);
+          strcpy(s_settings.Username, username_t->value->cstring);
+          save_settings(&s_settings);
           // static char welcome_message[40];
-          // snprintf(welcome_message, 40, "Welcome, %s!", settings.Username);
+          // snprintf(welcome_message, 40, "Welcome, %s!", s_settings.Username);
           // text_layer_set_text(s_main_text_layer, welcome_message);
           // text_layer_set_text(s_sub_text_layer, "Press select to start");
           // APP_LOG(APP_LOG_LEVEL_DEBUG, welcome_message);
@@ -67,7 +67,7 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
   
   Tuple *new_username_t = dict_find(iterator, MESSAGE_KEY_NewUsername);
   if (new_username_t) {
-    strcpy(settings.Username, new_username_t->value->cstring);
+    strcpy(s_settings.Username, new_username_t->value->cstring);
   }
   
   // Tuple *clicks_t = dict_find(iterator, MESSAGE_KEY_Clicks);
@@ -123,21 +123,14 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
 
   }
 
-  save_settings();
+  save_settings(&s_settings);
 }
 
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
-  switch (s_state) {
-    case S_LOGIN:
-      connect(settings.Username);
-      break;
-    case S_MAIN:
-      break;
-    case S_PLAY:
-      Game_select_handler(s_game);
-      break;
-    default:
-      break;
+  if (s_state == S_LOGIN) {
+    connect(s_settings.Username);
+  } else if (s_state == S_PLAY) {
+    Game_select_handler(s_game);
   }
 }
 
@@ -153,15 +146,29 @@ static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
   }
 }
 
-static void select_long_click_handler(ClickRecognizerRef recognizer, void *context) {
-  if (s_state == S_PLAY) {
-    Game_select_hold_handler(s_game);
+static void back_click_handler(ClickRecognizerRef recognizer, void *context) {
+  if (s_state == S_LOGIN) {
+    window_stack_pop(true);
+  } else if (s_state == S_PLAY) {
+    Game_back_handler(s_game);
   }
 }
 
-static void select_long_click_release_handler(ClickRecognizerRef recognizer, void *context) {
+static void select_press_handler(ClickRecognizerRef recognizer, void *context) {
+  if (s_state == S_PLAY) {
+    Game_select_press_handler(s_game);
+  }
+}
+
+static void select_release_handler(ClickRecognizerRef recognizer, void *context) {
   if (s_state == S_PLAY) {
     Game_select_release_handler(s_game);
+  }
+}
+
+static void select_double_click_handler(ClickRecognizerRef recognizer, void *context) {
+  if (s_state == S_PLAY) {
+    Game_select_double_handler(s_game);
   }
 }
 
@@ -169,20 +176,28 @@ static void click_config_provider(void *context) {
   window_single_click_subscribe(BUTTON_ID_SELECT, select_click_handler);
   window_single_click_subscribe(BUTTON_ID_UP, up_click_handler);
   window_single_click_subscribe(BUTTON_ID_DOWN, down_click_handler);
-  window_long_click_subscribe(BUTTON_ID_SELECT, 700, select_long_click_handler, select_long_click_release_handler);
+  window_single_click_subscribe(BUTTON_ID_BACK, back_click_handler);
+  window_raw_click_subscribe(BUTTON_ID_SELECT, select_press_handler, select_release_handler, NULL);
+  // window_long_click_subscribe(BUTTON_ID_SELECT, 300, select_long_click_handler, select_long_click_release_handler);
+  // window_multi_click_subscribe(BUTTON_ID_SELECT, 2, 0, 0, true, select_double_click_handler);
 }
 
-static void default_settings() {  
-  strcpy(settings.Username, ""); 
+static void will_focus_handler(bool in_focus) {
+  if (!in_focus) {
+    // If a notification pops up while the timer is firing
+    // very rapidly, it will crash the entire watch :)
+    // Stopping the timer when a notification appears will
+    // prevent this while also pausing the gameplay
+    if (s_frame_timer != NULL) {
+      app_timer_cancel(s_frame_timer);
+    }
+  } else {
+    if (s_frame_timer != NULL) {
+      s_frame_timer = app_timer_register(FRAME_DURATION, frame_timer_handle, NULL);
+    }
+  }
 }
 
-// Read settings from persistent storage
-static void load_settings() {
-  // Load the default settings
-  default_settings();
-  // Read settings from persistent storage, if they exist
-  persist_read_data(SETTINGS_KEY, &settings, sizeof(settings));
-}
 
 static void main_window_load(Window *window) {
   Layer *window_layer = window_get_root_layer(window);
@@ -195,7 +210,7 @@ static void main_window_load(Window *window) {
   s_gbc_graphics = GBC_Graphics_ctor(s_main_window, NUM_VRAMS, NUM_BACKGROUNDS);
   GBC_Graphics_set_screen_bounds(s_gbc_graphics, SCREEN_BOUNDS);
   GBC_Graphics_lcdc_set_enabled(s_gbc_graphics, false);
-  s_game = Game_init(s_gbc_graphics, s_main_window);
+  s_game = Game_init(s_gbc_graphics, s_main_window, &s_settings);
 
   // Main text
   s_main_text_layer = text_layer_create(GRect(bounds.origin.x, bounds.origin.y + STATUS_BAR_LAYER_HEIGHT + 30, bounds.size.w, bounds.size.h - STATUS_BAR_LAYER_HEIGHT));
@@ -238,11 +253,11 @@ static void main_window_unload(Window *window) {
   text_layer_destroy(s_sub_text_layer);
   Game_destroy(s_game);
   GBC_Graphics_destroy(s_gbc_graphics);
-  disconnect(settings.Username);
+  disconnect(s_settings.Username);
 }
 
 static void init() {
-  load_settings();
+  load_settings(&s_settings);
   
   // setup window
   s_main_window = window_create();
@@ -256,12 +271,15 @@ static void init() {
 
   // Register callbacks for inputs
   window_set_click_config_provider(s_main_window, click_config_provider);
+
+  // Register focus callback 
+  app_focus_service_subscribe(will_focus_handler);
   
   // Register callbacks for app messages
   app_message_register_inbox_received(inbox_received_callback);
   app_message_register_inbox_dropped(inbox_dropped_callback);
   app_message_register_outbox_failed(outbox_failed_callback);
-  app_message_register_outbox_sent(outbox_sent_callback);
+  app_focus_service_subscribe(will_focus_handler);
 
   // Open AppMessage
   const int inbox_size = 1024; // maaaaybe overkill, but 128 isn't enough

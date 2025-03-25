@@ -35,7 +35,7 @@ GBC_Graphics *GBC_Graphics_ctor(Window *window, uint8_t num_vram_banks, uint8_t 
 
     // Allocate space for the palette banks
     self->bg_palette_bank = (uint8_t*)malloc(GBC_PALETTE_BANK_NUM_BYTES);
-    self->sprite_palette_bank = (uint8_t*)malloc(GBC_PALETTE_BANK_NUM_BYTES);
+    self->sprite_palette_bank = (uint8_t*)malloc(GBC_PALETTE_SPRITE_BANK_NUM_BYTES);
 
     self->num_backgrounds = num_backgrounds;
     self->bg_scroll_x = (short*)malloc(num_backgrounds * sizeof(short));
@@ -145,7 +145,7 @@ uint8_t *GBC_Graphics_get_vram_bank(GBC_Graphics *self, uint8_t vram_bank_number
  * Sets the colors of a palette in the given palette bank
  * 
  * @param palette_bank A pointer to the palette bank
- * @param palette_num The number of the palette to set, 0 to 7
+ * @param palette_num The number of the palette to set, 0 to 7, 0 to 31 for sprites
  * @param num_colors The number of colors being set, from 1 to 16
  * @param args A va_list containing all of the colors
  */
@@ -518,7 +518,7 @@ static void render_graphics(GBC_Graphics *self, Layer *layer, GContext *ctx) {
                 // Hide pixel if sprites disabled
                 pixel = pixel & BOOL_MASK[(self->lcdc & GBC_LCDC_SPRITE_ENABLE_FLAG) != 0];
 
-                new_pixel_color = self->sprite_palette_bank[((sprite[GBC_OAM_ATTR_BYTE] & GBC_ATTR_PALETTE_MASK) << 4) + pixel]; // (tile_attr & GBC_ATTR_PALETTE_MASK) * GBC_PALETTE_NUM_BYTES + pixel
+                new_pixel_color = self->sprite_palette_bank[((sprite_id) << 4) + pixel]; // sprite_id * GBC_PALETTE_NUM_BYTES + pixel
                 
                 // Now replace the pixel if we have a color
                 pixel_color = (pixel_color & BOOL_MASK[pixel == 0]) + (new_pixel_color & BOOL_MASK[pixel != 0]);

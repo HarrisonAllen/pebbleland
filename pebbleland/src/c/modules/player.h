@@ -18,6 +18,11 @@ struct _player {
     int num_tiles;
     uint8_t palette[GBC_PALETTE_NUM_BYTES];
     char username[USERNAME_MAX_LEN+1];
+    PlayerState state;
+    WalkState walk_state;
+    int walk_frame;
+    QueuedInput queued_input;
+    bool select_pressed;
 };
 
 // Set up basic player info
@@ -25,6 +30,15 @@ Player *Player_initialize(GBC_Graphics *graphics, int number);
 
 // Destroy the player object
 void Player_destroy(Player *player);
+
+// Queue an input for the player
+void Player_push_input(Player *player, QueuedInput input);
+
+// Pop an input from the queue
+void Player_pop_input(Player *player);
+
+// main loop
+void Player_step(Player *player);
 
 // Make player invisible
 void Player_hide(Player *player);

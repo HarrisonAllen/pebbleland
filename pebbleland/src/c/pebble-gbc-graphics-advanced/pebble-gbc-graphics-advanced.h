@@ -52,6 +52,8 @@
 #define GBC_PALETTE_BANK_NUM_BYTES 128
 #define GBC_NUM_SPRITES 40 ///> The maximum number of sprites
 #define GBC_SPRITE_NUM_BYTES 6 ///> The number of bytes per sprite
+#define GBC_PALETTE_SPRITE_NUM_PALETTES 32
+#define GBC_PALETTE_SPRITE_BANK_NUM_BYTES 512
 /**
  * The size of the OAM, calculated by:
  * 6 bytes per sprite * 40 sprite slots = 240 bytes

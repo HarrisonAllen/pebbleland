@@ -1,22 +1,16 @@
 #include "game.h"
 #include "palettes.h"
 #include "communication.h"
-#include "scroll_layer.h"
+#include "menus/main_menu.h"
 
-const ActionBarLayerIconPressAnimation direction_to_action_bar_anim[] = {
-    ActionBarLayerIconPressAnimationMoveDown,
-    ActionBarLayerIconPressAnimationMoveLeft,
-    ActionBarLayerIconPressAnimationMoveUp,
-    ActionBarLayerIconPressAnimationMoveRight
-};
-
-Game *Game_init(GBC_Graphics *graphics, Window *window) {
+Game *Game_init(GBC_Graphics *graphics, Window *window, ClaySettings *settings) {
     Game *game = NULL;
     game = malloc(sizeof(Game));
     if (game == NULL)
         return NULL;
     game->graphics = graphics;
     game->window = window;
+    game->settings = settings;
     for (int i = 0; i < MAX_PLAYERS; i++) {
         game->players[i] = Player_initialize(graphics, i);
     }
@@ -27,9 +21,6 @@ void Game_destroy(Game *game) {
     for (int i = 0; i < MAX_PLAYERS; i++) {
         Player_destroy(game->players[i]);
     }
-
-    if (game->action_bar != NULL) 
-        action_bar_layer_destroy(game->action_bar);
 
     if (game->icon_up != NULL) 
         gbitmap_destroy(game->icon_up);
@@ -43,34 +34,7 @@ void Game_destroy(Game *game) {
     }
 }
 
-void Game_set_direction_icon(Game *game, Direction dir) {
-    if (game->icon_middle != NULL) 
-        gbitmap_destroy(game->icon_middle);
-
-    game->icon_middle = gbitmap_create_with_resource(RESOURCE_ID_ICON_DOWN + dir);
-    action_bar_layer_set_icon(game->action_bar, BUTTON_ID_SELECT, game->icon_middle);
-    action_bar_layer_set_icon_press_animation(game->action_bar, BUTTON_ID_SELECT, 
-                                              direction_to_action_bar_anim[dir]);
-}
-
-void Game_setup_action_bar(Game *game) {
-    game->icon_up = gbitmap_create_with_resource(RESOURCE_ID_ICON_TURN_LEFT);
-    game->icon_down = gbitmap_create_with_resource(RESOURCE_ID_ICON_TURN_RIGHT);
-
-    
-    game->action_bar = action_bar_layer_create();
-    action_bar_layer_set_click_config_provider(game->action_bar, window_get_click_config_provider(game->window));
-    
-    action_bar_layer_set_icon(game->action_bar, BUTTON_ID_UP, game->icon_up);
-    action_bar_layer_set_icon_press_animation(game->action_bar, BUTTON_ID_UP, ActionBarLayerIconPressAnimationMoveLeft);
-    action_bar_layer_set_icon(game->action_bar, BUTTON_ID_DOWN, game->icon_down);
-    action_bar_layer_set_icon_press_animation(game->action_bar, BUTTON_ID_DOWN, ActionBarLayerIconPressAnimationMoveLeft);
-    Game_set_direction_icon(game, game->players[0]->direction);
-
-    action_bar_layer_add_to_window(game->action_bar, game->window);
-}
-
-void Game_start(Game *game, char *username) {
+void Game_start(Game *game) {
     // Load basic map
     GBC_Graphics_set_bg_palette_array(game->graphics, 0, BLANK_BG_PALETTE);
     window_set_background_color(game->window, GColorBlack);
@@ -81,7 +45,7 @@ void Game_start(Game *game, char *username) {
     size_t res_size = resource_size(tilesheet_handle);
     uint8_t *sprite_data = (uint8_t*)malloc(res_size);
     resource_load(tilesheet_handle, sprite_data, res_size);
-    Game_load_player(game, username, 0, sprite_data, PLAYER_ONE_PALETTE);
+    Game_load_player(game, game->settings->Username, 0, sprite_data, PLAYER_ONE_PALETTE);
     // Player_load_sprite_and_palette(game->players[0], sprite_data, PLAYER_ONE_PALETTE);
     free(sprite_data);
     int player_x = ((GBC_Graphics_get_screen_width(game->graphics) / 2 - (PLAYER_SPRITE_WIDTH / 2)) / 8) * 8;
@@ -94,9 +58,6 @@ void Game_start(Game *game, char *username) {
     // Show game (enable lcdc bit)
     GBC_Graphics_lcdc_set_enabled(game->graphics, true);
     GBC_Graphics_render(game->graphics);
-
-    // Render action bar
-    Game_setup_action_bar(game);
 }
 
 int Game_get_first_inactive_player_index(Game *game) {
@@ -174,34 +135,30 @@ void Game_remove_player(Game *game, char *username) {
     }
 }
 
-void Game_step() {
+void Game_step(Game *game) {
     // TODO: add game logic
+    // TODO: don't run game logic when not in focus
+    Player_step(game->players[0]);
+    GBC_Graphics_render(game->graphics);
 }
 
 void Game_up_handler(Game *game) {
-    Player_rotate_counterclockwise(game->players[0]);
-    Game_set_direction_icon(game, game->players[0]->direction);
-    GBC_Graphics_render(game->graphics);
+    // Turn left
+    Player_push_input(game->players[0], Q_UP);
 }
 
 void Game_down_handler(Game *game) {
-    Player_rotate_clockwise(game->players[0]);
-    Game_set_direction_icon(game, game->players[0]->direction);
-    GBC_Graphics_render(game->graphics);
+    // Turn right
+    Player_push_input(game->players[0], Q_DOWN);
 }
 
 void Game_select_handler(Game *game) {
-    // TODO: make arrow turn into stop for duration of step
-    Player_take_step(game->players[0]);
-    broadcast_position(game->players[0]->x, game->players[0]->y);
-    GBC_Graphics_render(game->graphics);
+    // Step or interact or stop walk
+    Player_push_input(game->players[0], Q_SELECT);
 }
 
-void Game_select_hold_handler(Game *game) {
-
-}
-
-void Game_select_release_handler(Game *game) {
+void Game_back_handler(Game *game) {
     // Open menu
-    create_scroll_window("Long press!");
+
+    MainMenu_init();
 }
