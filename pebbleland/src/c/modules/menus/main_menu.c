@@ -15,13 +15,14 @@ void MainMenu_window_unload(Window *window) {
     window_destroy(window);
 }
 
-MainMenu *MainMenu_init() { // TODO: add callback
+MainMenu *MainMenu_init(Player **players) { // TODO: add callback
     MainMenu *main_menu = NULL;
     main_menu = malloc(sizeof(MainMenu));
     if (main_menu == NULL)
         return NULL;
 
     main_menu->window = window_create();
+    main_menu->players = players;
 
     window_set_window_handlers(main_menu->window, (WindowHandlers) {
       .load = MainMenu_window_load,
@@ -45,8 +46,9 @@ void MainMenu_callback(int index, void *ctx) {
     // TODO: use game callback instead
     MainMenu *main_menu = (MainMenu *) (ctx);
     if (index == MENU_ITEM_INFO) {
-        main_menu->menu_items[MENU_ITEM_INFO].subtitle = "No info yet...";
-        TextWindow_init("No info yet...");
+        char text_buffer[60];
+        snprintf(text_buffer, 60, "Player information for %s will go here", main_menu->players[0]->username);
+        TextWindow_init(text_buffer);
         layer_mark_dirty(simple_menu_layer_get_layer(main_menu->menu_layer));
     } else if (index == MENU_ITEM_SETTINGS) {
         main_menu->menu_items[MENU_ITEM_SETTINGS].subtitle = "No settings yet...";
@@ -63,7 +65,8 @@ void MainMenu_callback(int index, void *ctx) {
 
 void MainMenu_open_menu(MainMenu *main_menu) {
     main_menu->menu_items[MENU_ITEM_INFO] = (SimpleMenuItem) {
-        .title = "Player Info",
+        .title = main_menu->players[0]->username,
+        .subtitle = "Online",
         .callback = MainMenu_callback
     };
     main_menu->menu_items[MENU_ITEM_SETTINGS] = (SimpleMenuItem) {

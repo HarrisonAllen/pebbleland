@@ -154,32 +154,11 @@ static void back_click_handler(ClickRecognizerRef recognizer, void *context) {
   }
 }
 
-static void select_press_handler(ClickRecognizerRef recognizer, void *context) {
-  if (s_state == S_PLAY) {
-    Game_select_press_handler(s_game);
-  }
-}
-
-static void select_release_handler(ClickRecognizerRef recognizer, void *context) {
-  if (s_state == S_PLAY) {
-    Game_select_release_handler(s_game);
-  }
-}
-
-static void select_double_click_handler(ClickRecognizerRef recognizer, void *context) {
-  if (s_state == S_PLAY) {
-    Game_select_double_handler(s_game);
-  }
-}
-
 static void click_config_provider(void *context) {
   window_single_click_subscribe(BUTTON_ID_SELECT, select_click_handler);
   window_single_click_subscribe(BUTTON_ID_UP, up_click_handler);
   window_single_click_subscribe(BUTTON_ID_DOWN, down_click_handler);
   window_single_click_subscribe(BUTTON_ID_BACK, back_click_handler);
-  window_raw_click_subscribe(BUTTON_ID_SELECT, select_press_handler, select_release_handler, NULL);
-  // window_long_click_subscribe(BUTTON_ID_SELECT, 300, select_long_click_handler, select_long_click_release_handler);
-  // window_multi_click_subscribe(BUTTON_ID_SELECT, 2, 0, 0, true, select_double_click_handler);
 }
 
 static void will_focus_handler(bool in_focus) {

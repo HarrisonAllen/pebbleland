@@ -5,16 +5,14 @@ void TextWindow_window_load(Window *window) {
 
   Layer *window_layer = window_get_root_layer(window);
   GRect bounds = layer_get_bounds(window_layer);
-  
-  GRect scroll_bounds = GRect(bounds.origin.x, bounds.origin.y, bounds.size.w, bounds.size.h);
-  
+    
   GFont font = fonts_get_system_font(SCROLL_FONT);
   
   // Find the bounds of the scrolling text
-  GRect text_max_bounds = GRect(scroll_bounds.origin.x, scroll_bounds.origin.y, scroll_bounds.size.w, 2000);
+  GRect text_max_bounds = GRect(bounds.origin.x, bounds.origin.y, bounds.size.w, 2000);
   GSize text_size = graphics_text_layout_get_content_size(text_window->text, font, 
                   text_max_bounds, GTextOverflowModeWordWrap, GTextAlignmentLeft);
-  GRect text_bounds = GRect(0, 0, scroll_bounds.size.w, text_size.h);
+  GRect text_bounds = GRect(0, 0, bounds.size.w, text_size.h + 8); // TODO: get rid of this magic number to prevent text cutoff (aka text box too small)
   
   // Create the TextLayer
   text_window->text_layer = text_layer_create(text_bounds);
@@ -23,7 +21,7 @@ void TextWindow_window_load(Window *window) {
   text_layer_set_text(text_window->text_layer, text_window->text);
   
   // Create the ScrollLayer
-  text_window->scroll_layer = scroll_layer_create(scroll_bounds);
+  text_window->scroll_layer = scroll_layer_create(bounds);
   
   // Set the scrolling content size
   scroll_layer_set_content_size(text_window->scroll_layer, text_size);
