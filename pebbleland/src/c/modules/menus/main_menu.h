@@ -4,6 +4,7 @@
 #include "../player.h"
 #include "user_menu_item.h"
 #include "../defines.h"
+#include "../settings.h"
 
 typedef struct _main_menu MainMenu;
 struct _main_menu {
@@ -15,9 +16,10 @@ struct _main_menu {
     SimpleMenuSection menu_sections[1];
     Player **players;
     UserMenuItem *user_menu_item;
+    ClaySettings *settings;
 };
 
-MainMenu *MainMenu_init(Player **players);
+MainMenu *MainMenu_init(Player **players, ClaySettings *settings);
 
 void MainMenu_destroy(MainMenu *main_menu);
 

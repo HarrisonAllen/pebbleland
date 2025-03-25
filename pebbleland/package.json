@@ -42,7 +42,8 @@
       "Poll",
       "UserConnected",
       "UserDisconnected",
-      "BroadcastConnect"
+      "BroadcastConnect",
+      "Gyro"
     ],
     "resources": {
       "media": [

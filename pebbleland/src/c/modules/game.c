@@ -160,5 +160,5 @@ void Game_select_handler(Game *game) {
 void Game_back_handler(Game *game) {
     // Open menu
 
-    MainMenu_init(game->players);
+    MainMenu_init(game->players, game->settings);
 }

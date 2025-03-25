@@ -2,6 +2,7 @@
 #include "../defines.h"
 #include "text_window.h"
 #include "user_menu.h"
+#include "settings_menu.h"
 
 void MainMenu_window_load(Window *window) {
     MainMenu *main_menu = (MainMenu *) (window_get_user_data(window));
@@ -16,7 +17,7 @@ void MainMenu_window_unload(Window *window) {
     window_destroy(window);
 }
 
-MainMenu *MainMenu_init(Player **players) { // TODO: add callback
+MainMenu *MainMenu_init(Player **players, ClaySettings *settings) { // TODO: add callback
     MainMenu *main_menu = NULL;
     main_menu = malloc(sizeof(MainMenu));
     if (main_menu == NULL)
@@ -24,6 +25,7 @@ MainMenu *MainMenu_init(Player **players) { // TODO: add callback
 
     main_menu->window = window_create();
     main_menu->players = players;
+    main_menu->settings = settings;
 
     window_set_window_handlers(main_menu->window, (WindowHandlers) {
       .load = MainMenu_window_load,
@@ -54,9 +56,7 @@ void MainMenu_callback(int index, void *ctx) {
         TextWindow_init(text_buffer);
         layer_mark_dirty(simple_menu_layer_get_layer(main_menu->menu_layer));
     } else if (index == MENU_ITEM_SETTINGS) {
-        main_menu->menu_items[MENU_ITEM_SETTINGS].subtitle = "No settings yet...";
-        TextWindow_init("No settings yet...");
-        layer_mark_dirty(simple_menu_layer_get_layer(main_menu->menu_layer));
+        SettingsMenu_init(main_menu->settings);
     } else if (index == MENU_ITEM_USERS) {
         UserMenu_init(main_menu->players);
     } else if (index == MENU_ITEM_LOGOUT) {
