@@ -1,14 +1,15 @@
 #include "player.h"
 #include "communication.h"
 
-Player *Player_initialize(GBC_Graphics *graphics, int number) {
+Player *Player_initialize(int number, GBC_Graphics *graphics, ClaySettings *settings) {
     Player *player = NULL;
     player = malloc(sizeof(Player));
     if (player == NULL)
         return NULL;
-    player->active = false;
-    player->graphics = graphics;
     player->number = number;
+    player->graphics = graphics;
+    player->settings = settings;
+    player->active = false;
     player->sprite_number = MAX_PLAYERS - (player->number + 1);
     player->direction = D_DOWN;
     if (player->number == 0) {
@@ -40,13 +41,17 @@ void Player_push_input(Player *player, QueuedInput input) {
 }
 
 void Player_pop_input(Player *player) {
+    if (player->settings->Tilt) {
+        Player_set_direction(player, player->tilt_direction);
+    }
     if (player->queued_input == Q_UP) {
         Player_rotate_counterclockwise(player);
         player->queued_input = Q_NONE;
-    } if (player->queued_input == Q_DOWN) {
+    } 
+    if (player->queued_input == Q_DOWN) {
         Player_rotate_clockwise(player);
         player->queued_input = Q_NONE;
-    } 
+    }
     if (player->queued_input == Q_SELECT) {
         if (player->state == P_WALK) {
             if (player->walk_state == W_WALK) {
@@ -126,7 +131,6 @@ void Player_move(Player *player, int x, int y) {
 }
 
 void Player_load_sprite_and_palette(Player *player, uint8_t *sprite_data, uint8_t *palette_data) {
-    // APP_LOG(APP_LOG_LEVEL_DEBUG, "Loading %d tiles for player %d", player->num_tiles, player->number);
     GBC_Graphics_load_from_buffer_into_vram(player->graphics, sprite_data, player->num_tiles, player->tile_offset, PLAYER_VRAM);
     GBC_Graphics_set_sprite_palette_array(player->graphics, player->sprite_number, palette_data);
 }
@@ -140,8 +144,10 @@ void Player_render(Player *player) {
 }
 
 void Player_set_direction(Player *player, Direction direction) {
-    player->direction = direction;
-    Player_render(player);
+    if (direction != D_MAX) {
+        player->direction = direction;
+        Player_render(player);
+    }
 }
 
 void Player_rotate_clockwise(Player *player) {
@@ -150,6 +156,10 @@ void Player_rotate_clockwise(Player *player) {
 
 void Player_rotate_counterclockwise(Player *player) {
     Player_set_direction(player, (player->direction - 1 + D_MAX) % D_MAX); // The + D_MAX is to avoid negative mod
+}
+
+void Player_set_tilt_direction(Player *player, Direction tilt_direction) {
+    player->tilt_direction = tilt_direction;
 }
 
 void Player_take_step(Player *player) {

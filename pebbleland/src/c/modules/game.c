@@ -12,7 +12,7 @@ Game *Game_init(GBC_Graphics *graphics, Window *window, ClaySettings *settings) 
     game->window = window;
     game->settings = settings;
     for (int i = 0; i < MAX_PLAYERS; i++) {
-        game->players[i] = Player_initialize(graphics, i);
+        game->players[i] = Player_initialize(i, graphics, settings);
     }
     return game;
 }
@@ -51,6 +51,8 @@ void Game_start(Game *game) {
     int player_x = ((GBC_Graphics_get_screen_width(game->graphics) / 2 - (PLAYER_SPRITE_WIDTH / 2)) / 8) * 8;
     int player_y = ((GBC_Graphics_get_screen_height(game->graphics) / 2 - (PLAYER_SPRITE_HEIGHT / 2)) / 8) * 8;
     Player_set_position(game->players[0], player_x, player_y);
+
+    game->in_focus = true;
 
     // Load other players
     broadcast_connect(player_x, player_y, true);
@@ -135,11 +137,55 @@ void Game_remove_player(Game *game, char *username) {
     }
 }
 
+Direction Game_calculate_tilt(Game *game) {
+    AccelData accel = (AccelData) { .x = 0, .y = 0, .z = 0 };
+    accel_service_peek(&accel);
+    int accel_x = accel.x - game->accel_cal_x;
+    int accel_y = accel.y - game->accel_cal_y;
+    if (abs(accel_x) > abs(accel_y)) {
+        if (accel_x < -TILT_THRESHOLD) {
+            return D_LEFT;
+        } else if (accel_x > TILT_THRESHOLD) {
+            return D_RIGHT;
+        }
+    } else {
+        if (accel_y < -TILT_THRESHOLD) {
+            return D_DOWN;
+        } else if (accel_y > TILT_THRESHOLD) {
+            return D_UP;
+        }
+    }
+    return D_MAX;
+}
+
+void Game_calibrate_accel(Game *game) {
+    AccelData accel = (AccelData) { .x = 0, .y = 0, .z = 0 };
+    accel_service_peek(&accel);
+    game->accel_cal_x = accel.x;
+    game->accel_cal_y = accel.y;
+    Player_set_tilt_direction(game->players[0], D_MAX);
+}
+
 void Game_step(Game *game) {
     // TODO: add game logic
     // TODO: don't run game logic when not in focus
-    Player_step(game->players[0]);
-    GBC_Graphics_render(game->graphics);
+    if (window_stack_get_top_window() == game->window && game->in_focus) {
+        if (game->paused) {
+            Game_calibrate_accel(game);
+            game->paused = false;
+        }
+    } else {
+        if (!game->paused) {
+            game->paused = true;
+        }
+    }
+    if (!game->paused) {
+        if (game->settings->Tilt) {
+            Player_set_tilt_direction(game->players[0], Game_calculate_tilt(game));
+        }
+        Player_step(game->players[0]);
+        GBC_Graphics_render(game->graphics);
+    }
 }
 
 void Game_up_handler(Game *game) {
@@ -161,4 +207,8 @@ void Game_back_handler(Game *game) {
     // Open menu
 
     MainMenu_init(game->players, game->settings);
+}
+
+void Game_focus_handler(Game *game, bool in_focus) {
+    game->in_focus = in_focus;
 }

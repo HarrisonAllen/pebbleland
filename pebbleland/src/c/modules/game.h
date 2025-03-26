@@ -13,6 +13,8 @@ struct _game {
     GBC_Graphics *graphics;
     Window *window;
     ClaySettings *settings;
+    int accel_cal_x, accel_cal_y;
+    bool in_focus, paused;
     GBitmap *icon_up, *icon_middle, *icon_down;
 };
 
@@ -41,3 +43,5 @@ void Game_down_handler(Game *game);
 void Game_select_handler(Game *game);
 
 void Game_back_handler(Game *game);
+
+void Game_focus_handler(Game *game, bool in_focus);

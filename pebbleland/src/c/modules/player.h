@@ -4,14 +4,17 @@
 #include "defines.h"
 #include "enums.h"
 #include "../pebble-gbc-graphics-advanced/pebble-gbc-graphics-advanced.h"
+#include "settings.h"
 
 typedef struct _player Player;
 struct _player {
-    bool active;
     GBC_Graphics *graphics;
+    ClaySettings *settings;
+    bool active;
     int x;
     int y;
     Direction direction;
+    Direction tilt_direction;
     int number;
     int sprite_number;
     int tile_offset;
@@ -26,7 +29,7 @@ struct _player {
 };
 
 // Set up basic player info
-Player *Player_initialize(GBC_Graphics *graphics, int number);
+Player *Player_initialize(int number, GBC_Graphics *graphics, ClaySettings *settings);
 
 // Destroy the player object
 void Player_destroy(Player *player);
@@ -72,5 +75,7 @@ void Player_set_direction(Player *player, Direction direction);
 void Player_rotate_clockwise(Player *player);
 
 void Player_rotate_counterclockwise(Player *player);
+
+void Player_set_tilt_direction(Player *player, Direction tilt_direction);
 
 void Player_take_step(Player *player);

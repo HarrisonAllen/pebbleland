@@ -175,6 +175,9 @@ static void will_focus_handler(bool in_focus) {
       s_frame_timer = app_timer_register(FRAME_DURATION, frame_timer_handle, NULL);
     }
   }
+  if (s_state == S_PLAY) {
+    Game_focus_handler(s_game, in_focus);
+  }
 }
 
 
@@ -258,7 +261,6 @@ static void init() {
   app_message_register_inbox_received(inbox_received_callback);
   app_message_register_inbox_dropped(inbox_dropped_callback);
   app_message_register_outbox_failed(outbox_failed_callback);
-  app_focus_service_subscribe(will_focus_handler);
 
   // Open AppMessage
   const int inbox_size = 1024; // maaaaybe overkill, but 128 isn't enough

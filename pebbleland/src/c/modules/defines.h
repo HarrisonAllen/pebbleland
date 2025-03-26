@@ -44,3 +44,7 @@
 // - Settings menu
 #define SETTINGS_MENU_NUM_ITEMS 1
 #define MENU_ITEM_TILT 0
+
+// Tilt
+// - Calibration
+#define TILT_THRESHOLD 150
