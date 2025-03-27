@@ -1,5 +1,5 @@
 #include <pebble.h>
-#include "modules/menus/text_window.h"
+#include "modules/windows/text_window.h"
 #include "modules/defines.h"
 #include "modules/enums.h"
 #include "modules/communication.h"

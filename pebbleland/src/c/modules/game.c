@@ -2,6 +2,7 @@
 #include "palettes.h"
 #include "communication.h"
 #include "menus/main_menu.h"
+#include "windows/slide_layer.h"
 
 Game *Game_init(GBC_Graphics *graphics, Window *window, ClaySettings *settings) {
     Game *game = NULL;
@@ -21,7 +22,9 @@ void Game_destroy(Game *game) {
     for (int i = 0; i < MAX_PLAYERS; i++) {
         Player_destroy(game->players[i]);
     }
-
+    if (game->notification != NULL) {
+        SlideLayer_cancel(game->notification);
+    }
     if (game->icon_up != NULL) 
         gbitmap_destroy(game->icon_up);
     if (game->icon_middle != NULL) 
@@ -60,6 +63,11 @@ void Game_start(Game *game) {
     // Show game (enable lcdc bit)
     GBC_Graphics_lcdc_set_enabled(game->graphics, true);
     GBC_Graphics_render(game->graphics);
+
+    // And show welcome message
+    char welcome_text[POPUP_TEXT_LEN];
+    snprintf(welcome_text, POPUP_TEXT_LEN, "Welcome, %s!", game->settings->Username);
+    Game_show_notification(game, welcome_text, false);
 }
 
 int Game_get_first_inactive_player_index(Game *game) {
@@ -124,6 +132,10 @@ void Game_add_player(Game *game, char *username, int x, int y) {
             Game_load_player(game, username, new_player_number, sprite_data, DEFAULT_PALETTE);
             free(sprite_data);
             Game_update_player(game, username, x, y);
+
+            char connect_message[40];
+            snprintf(connect_message, 40, "%s connected", username);
+            Game_show_notification(game, connect_message, true);
         }
     } else {
         APP_LOG(APP_LOG_LEVEL_WARNING, "User already active: %s", username);
@@ -134,6 +146,10 @@ void Game_remove_player(Game *game, char *username) {
     int player_number = Game_get_player_by_name(game, username);
     if (player_number != -1 && player_number != 0) {
         Player_deactivate(game->players[player_number]);
+
+        char disconnect_message[40];
+        snprintf(disconnect_message, 40, "%s disconnected", username);
+        Game_show_notification(game, disconnect_message, true);
     }
 }
 
@@ -205,10 +221,24 @@ void Game_select_handler(Game *game) {
 
 void Game_back_handler(Game *game) {
     // Open menu
-
-    MainMenu_init(game->players, game->settings);
+    if (game->notification != NULL) {
+        SlideLayer_cancel(game->notification);
+    } else {
+        MainMenu_init(game->players, game->settings);
+    }
 }
 
 void Game_focus_handler(Game *game, bool in_focus) {
     game->in_focus = in_focus;
+}
+
+void Game_release_notification(void *context) {
+    ((Game *)context)->notification = NULL;
+}
+
+void Game_show_notification(Game *game, char *text, bool small) {
+    if (game->notification != NULL) {
+        SlideLayer_cancel(game->notification);
+    }
+    game->notification = SlideLayer_init(game->window, text, small, Game_release_notification, (void *) game);
 }

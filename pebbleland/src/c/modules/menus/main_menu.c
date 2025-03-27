@@ -1,6 +1,6 @@
 #include "main_menu.h"
 #include "../defines.h"
-#include "text_window.h"
+#include "../windows/text_window.h"
 #include "user_menu.h"
 #include "settings_menu.h"
 
@@ -59,7 +59,12 @@ void MainMenu_callback(int index, void *ctx) {
         SettingsMenu_init(main_menu->settings);
     } else if (index == MENU_ITEM_USERS) {
         UserMenu_init(main_menu->players);
+    } else if (index == MENU_ITEM_FRIEND_REQUESTS) {
+        // TODO: pop up friend request menu
+    } else if (index == MENU_ITEM_HELP) {
+        // TODO: pop up help menu
     } else if (index == MENU_ITEM_LOGOUT) {
+        // TODO: Add confirmation
         window_stack_pop_all(true);
     }
 }
@@ -73,6 +78,15 @@ void MainMenu_open_menu(MainMenu *main_menu) {
     };
     main_menu->menu_items[MENU_ITEM_USERS] = (SimpleMenuItem) {
         .title = "Users",
+        .callback = MainMenu_callback
+    };
+    main_menu->menu_items[MENU_ITEM_FRIEND_REQUESTS] = (SimpleMenuItem) {
+        .title = "Friend Requests",
+        .subtitle = "2 new requests!",
+        .callback = MainMenu_callback
+    };
+    main_menu->menu_items[MENU_ITEM_HELP] = (SimpleMenuItem) {
+        .title = "Help",
         .callback = MainMenu_callback
     };
     main_menu->menu_items[MENU_ITEM_LOGOUT] = (SimpleMenuItem) {

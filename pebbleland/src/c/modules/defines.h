@@ -1,6 +1,7 @@
 #pragma once
 #include "../pebble-gbc-graphics-advanced/pebble-gbc-graphics-advanced.h"
 
+// Scrool window
 #define SCROLL_FONT FONT_KEY_GOTHIC_18
 #define SCROLL_TEXT_LEN 200
 
@@ -36,11 +37,13 @@
 
 // Menu Items
 // - Main menu
-#define MAIN_MENU_NUM_ITEMS 4
+#define MAIN_MENU_NUM_ITEMS 6
 #define MENU_ITEM_INFO 0
 #define MENU_ITEM_SETTINGS 1
 #define MENU_ITEM_USERS 2
-#define MENU_ITEM_LOGOUT 3
+#define MENU_ITEM_FRIEND_REQUESTS 3
+#define MENU_ITEM_HELP 4
+#define MENU_ITEM_LOGOUT 5
 // - Settings menu
 #define SETTINGS_MENU_NUM_ITEMS 1
 #define MENU_ITEM_TILT 0
@@ -48,3 +51,16 @@
 // Tilt
 // - Calibration
 #define TILT_THRESHOLD 150
+
+// Window popup
+#define POPUP_SLIDE_DURATION 500
+#define POPUP_EXIST_DURATION 2000
+#define POPUP_FONT FONT_KEY_GOTHIC_24_BOLD
+#define POPUP_FONT_SMALL FONT_KEY_GOTHIC_18
+#define POPUP_HEIGHT 54
+#define POPUP_HEIGHT_SMALL 42
+#define POPUP_BORDER_THICKNESS 2
+#define POPUP_TEXT_LEN 60
+#define POPUP_TEXT_Y_OFFSET -4
+#define POPUP_TEXT_Y_OFFSET_SMALL -2
+#define POPUP_CORNER_RADIUS 10

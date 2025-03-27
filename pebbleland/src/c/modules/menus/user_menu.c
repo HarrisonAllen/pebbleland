@@ -1,5 +1,5 @@
 #include "user_menu.h"
-#include "text_window.h"
+#include "../windows/text_window.h"
 
 void UserMenu_window_load(Window *window) {
     UserMenu *user_menu = (UserMenu *) (window_get_user_data(window));

@@ -6,6 +6,7 @@
 #include "player.h"
 #include "settings.h"
 #include "../pebble-gbc-graphics-advanced/pebble-gbc-graphics-advanced.h"
+#include "windows/slide_layer.h"
 
 typedef struct _game Game;
 struct _game {
@@ -16,6 +17,7 @@ struct _game {
     int accel_cal_x, accel_cal_y;
     bool in_focus, paused;
     GBitmap *icon_up, *icon_middle, *icon_down;
+    SlideLayer *notification;
 };
 
 Game *Game_init(GBC_Graphics *graphics, Window *window, ClaySettings *settings);
@@ -45,3 +47,5 @@ void Game_select_handler(Game *game);
 void Game_back_handler(Game *game);
 
 void Game_focus_handler(Game *game, bool in_focus);
+
+void Game_show_notification(Game *game, char *text, bool small);
