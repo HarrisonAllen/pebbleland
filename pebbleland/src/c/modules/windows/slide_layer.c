@@ -11,11 +11,13 @@ void SlideLayer_update_proc(Layer *layer, GContext *ctx) {
   // Outline
   GRect rect_bounds = layer_bounds;
   graphics_context_set_stroke_width(ctx, POPUP_BORDER_THICKNESS);
-  graphics_fill_rect(ctx, rect_bounds, POPUP_CORNER_RADIUS, GCornersAll);graphics_draw_round_rect(ctx, rect_bounds, POPUP_CORNER_RADIUS);
+  graphics_fill_rect(ctx, rect_bounds, POPUP_CORNER_RADIUS, GCornersAll);
+  graphics_draw_round_rect(ctx, rect_bounds, POPUP_CORNER_RADIUS);
 
   // Text
+  int y_offset = slide_layer->small ? POPUP_TEXT_Y_OFFSET_SMALL : POPUP_TEXT_Y_OFFSET;
   GFont font = fonts_get_system_font(slide_layer->small ? POPUP_FONT_SMALL : POPUP_FONT);
-  GRect text_bounds = GRect(layer_bounds.origin.x + POPUP_BORDER_THICKNESS, rect_bounds.origin.y + POPUP_TEXT_Y_OFFSET, layer_bounds.size.w - 2 * POPUP_BORDER_THICKNESS, layer_bounds.size.h - POPUP_TEXT_Y_OFFSET);
+  GRect text_bounds = GRect(layer_bounds.origin.x + POPUP_BORDER_THICKNESS, rect_bounds.origin.y + y_offset, layer_bounds.size.w - 2 * POPUP_BORDER_THICKNESS, layer_bounds.size.h - y_offset);
   graphics_draw_text(ctx, slide_layer->text, font, text_bounds, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 }
 
