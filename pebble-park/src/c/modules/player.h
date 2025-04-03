@@ -5,11 +5,16 @@
 #include "enums.h"
 #include "../pebble-gbc-graphics-advanced/pebble-gbc-graphics-advanced.h"
 #include "settings.h"
+#include "background.h"
 
 typedef struct _player Player;
 struct _player {
     GBC_Graphics *graphics;
+    Background *background;
     ClaySettings *settings;
+    Player *player_one;
+    Window *window;
+    TextLayer *text_layer;
     bool active;
     int x;
     int y;
@@ -28,46 +33,36 @@ struct _player {
     bool select_pressed;
 };
 
-// Set up basic player info
-Player *Player_initialize(int number, GBC_Graphics *graphics, ClaySettings *settings);
+Player *Player_initialize(int number, GBC_Graphics *graphics, Background *background, ClaySettings *settings, Player *player_one, Window *window);
 
-// Destroy the player object
 void Player_destroy(Player *player);
 
-// Queue an input for the player
 void Player_push_input(Player *player, QueuedInput input);
 
-// Pop an input from the queue
 void Player_pop_input(Player *player);
 
-// main loop
 void Player_step(Player *player);
 
-// Make player invisible
 void Player_hide(Player *player);
 
-// Make player visible
 void Player_show(Player *player);
 
-// Hide player and make inactive
 void Player_deactivate(Player *player);
 
-// Show player and make active
+void Player_set_up_username_text(Player *player);
+
 void Player_activate(Player *player);
 
-// Load username for player
 void Player_set_username(Player *player, char *username);
 
-// Set location of player and update graphics
 void Player_set_position(Player *player, int x, int y);
 
-// Move player by x, y
 void Player_move(Player *player, int x, int y);
 
-// Load in a sprite and palette from a buffer
 void Player_load_sprite_and_palette(Player *player, uint8_t *sprite_data, uint8_t *palette_data);
 
-// Update the sprite pretty much
+void Player_render_username(Player *player);
+
 void Player_render(Player *player);
 
 void Player_set_direction(Player *player, Direction direction);

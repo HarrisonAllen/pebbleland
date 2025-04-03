@@ -1,5 +1,5 @@
 #include "game.h"
-#include "palettes.h"
+#include "palettes/sprite_palettes.h"
 #include "communication.h"
 #include "menus/main_menu.h"
 #include "windows/slide_layer.h"
@@ -12,8 +12,11 @@ Game *Game_init(GBC_Graphics *graphics, Window *window, ClaySettings *settings) 
     game->graphics = graphics;
     game->window = window;
     game->settings = settings;
-    for (int i = 0; i < MAX_PLAYERS; i++) {
-        game->players[i] = Player_initialize(i, graphics, settings);
+    game->background = Background_init(graphics);
+    game->players[0] = Player_initialize(0, graphics, game->background, settings, NULL, window);
+    game->player_one = game->players[0];
+    for (int i = 1; i < MAX_PLAYERS; i++) {
+        game->players[i] = Player_initialize(i, graphics, game->background, settings, game->player_one, window);
     }
     return game;
 }
@@ -31,6 +34,8 @@ void Game_destroy(Game *game) {
         gbitmap_destroy(game->icon_middle);
     if (game->icon_down != NULL) 
         gbitmap_destroy(game->icon_down);
+    if (game->graphics != NULL)
+        Background_destroy(game->background);
         
     if (game != NULL) {
         free(game);
@@ -49,16 +54,20 @@ void Game_start(Game *game) {
     uint8_t *sprite_data = (uint8_t*)malloc(res_size);
     resource_load(tilesheet_handle, sprite_data, res_size);
     Game_load_player(game, game->settings->Username, 0, sprite_data, PLAYER_ONE_PALETTE);
-    // Player_load_sprite_and_palette(game->players[0], sprite_data, PLAYER_ONE_PALETTE);
+    // Player_load_sprite_and_palette(game->player_one, sprite_data, PLAYER_ONE_PALETTE);
     free(sprite_data);
-    int player_x = ((GBC_Graphics_get_screen_width(game->graphics) / 2 - (PLAYER_SPRITE_WIDTH / 2)) / 8) * 8;
-    int player_y = ((GBC_Graphics_get_screen_height(game->graphics) / 2 - (PLAYER_SPRITE_HEIGHT / 2)) / 8) * 8;
-    Player_set_position(game->players[0], player_x, player_y);
+    int player_x = 0; // ((GBC_Graphics_get_screen_width(game->graphics) / 2 - (PLAYER_SPRITE_WIDTH / 2)) / 8) * 8;
+    int player_y = 0; // ((GBC_Graphics_get_screen_height(game->graphics) / 2 - (PLAYER_SPRITE_HEIGHT / 2)) / 8) * 8;
+    Player_set_position(game->player_one, player_x, player_y);
 
     game->in_focus = true;
 
     // Load other players
     broadcast_connect(player_x, player_y, true);
+
+    // Set up background
+    Background_load_resources(game->background);
+    Background_load_screen(game->background, game->player_one->x, game->player_one->y);
     
     // Show game (enable lcdc bit)
     GBC_Graphics_lcdc_set_enabled(game->graphics, true);
@@ -179,7 +188,7 @@ void Game_calibrate_accel(Game *game) {
     accel_service_peek(&accel);
     game->accel_cal_x = accel.x;
     game->accel_cal_y = accel.y;
-    Player_set_tilt_direction(game->players[0], D_MAX);
+    Player_set_tilt_direction(game->player_one, D_MAX);
 }
 
 void Game_step(Game *game) {
@@ -197,26 +206,29 @@ void Game_step(Game *game) {
     }
     if (!game->paused) {
         if (game->settings->Tilt) {
-            Player_set_tilt_direction(game->players[0], Game_calculate_tilt(game));
+            Player_set_tilt_direction(game->player_one, Game_calculate_tilt(game));
         }
-        Player_step(game->players[0]);
+        Player_step(game->player_one);
+        for (int i = 1; i < MAX_PLAYERS; i++) {
+            Player_render(game->players[i]);
+        }
         GBC_Graphics_render(game->graphics);
     }
 }
 
 void Game_up_handler(Game *game) {
     // Turn left
-    Player_push_input(game->players[0], Q_UP);
+    Player_push_input(game->player_one, Q_UP);
 }
 
 void Game_down_handler(Game *game) {
     // Turn right
-    Player_push_input(game->players[0], Q_DOWN);
+    Player_push_input(game->player_one, Q_DOWN);
 }
 
 void Game_select_handler(Game *game) {
     // Step or interact or stop walk
-    Player_push_input(game->players[0], Q_SELECT);
+    Player_push_input(game->player_one, Q_SELECT);
 }
 
 void Game_back_handler(Game *game) {

@@ -58,6 +58,16 @@
           "file": "sprites/default_sprite_tilesheet.bin"
         },
         {
+          "type": "raw",
+          "name": "BG_TILESHEET",
+          "file": "backgrounds/bg_tilesheet-no-flips.bin"
+        },
+        {
+          "type": "raw",
+          "name": "BG_TILEMAP",
+          "file": "backgrounds/bg_tilemap-no-flips.bin"
+        },
+        {
             "type": "bitmap", 
             "name": "ICON_DOWN", 
             "file": "icons/icon_down.png"

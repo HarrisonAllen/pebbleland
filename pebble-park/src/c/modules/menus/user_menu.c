@@ -52,7 +52,7 @@ void UserMenu_callback(int index, void *ctx) {
 
 void UserMenu_open_menu(UserMenu *user_menu) {
     int menu_item_index = 0;
-    for (int i = 0; i < MAX_PLAYERS; i++) {
+    for (int i = 1; i < MAX_PLAYERS; i++) {
         if (user_menu->players[i]->active) {
             user_menu->user_menu_items[menu_item_index] = UserMenuItem_create(user_menu->players[i]->username, -1, UserMenu_callback);
             user_menu->menu_items[menu_item_index] = user_menu->user_menu_items[menu_item_index]->menu_item;

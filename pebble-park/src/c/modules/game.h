@@ -7,10 +7,12 @@
 #include "settings.h"
 #include "../pebble-gbc-graphics-advanced/pebble-gbc-graphics-advanced.h"
 #include "windows/slide_layer.h"
+#include "background.h"
 
 typedef struct _game Game;
 struct _game {
     Player *players[MAX_PLAYERS];
+    Player *player_one;
     GBC_Graphics *graphics;
     Window *window;
     ClaySettings *settings;
@@ -18,6 +20,7 @@ struct _game {
     bool in_focus, paused;
     GBitmap *icon_up, *icon_middle, *icon_down;
     SlideLayer *notification;
+    Background *background;
 };
 
 Game *Game_init(GBC_Graphics *graphics, Window *window, ClaySettings *settings);

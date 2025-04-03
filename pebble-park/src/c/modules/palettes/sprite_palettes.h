@@ -27,6 +27,7 @@ uint8_t BLANK_BG_PALETTE[16] = {
     #endif
 };
 
+
 // #define DEFAULT_DEFAULT 0
 
 // const uint8_t DEFAULT_DATA[] = {
