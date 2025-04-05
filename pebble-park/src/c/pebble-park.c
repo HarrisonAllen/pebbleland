@@ -10,6 +10,7 @@
 static Window *s_main_window;
 static StatusBarLayer *s_status_bar;
 static TextLayer *s_main_text_layer, *s_sub_text_layer;
+static Layer *s_frame_layer;
 static GBC_Graphics *s_gbc_graphics;
 static Game *s_game;
 static AppTimer *s_frame_timer;
@@ -180,6 +181,34 @@ static void will_focus_handler(bool in_focus) {
   }
 }
 
+static void frame_update_proc(Layer *layer, GContext *ctx) {
+  GRect layer_bounds = layer_get_bounds(layer);
+  GRect gbc_bounds = GBC_Graphics_get_screen_bounds(s_gbc_graphics);
+  GRect left_frame = GRect(layer_bounds.origin.x, 
+                           layer_bounds.origin.y,
+                           gbc_bounds.origin.x - layer_bounds.origin.x, 
+                           layer_bounds.size.h);
+  GRect right_frame = GRect(gbc_bounds.origin.x + gbc_bounds.size.w, 
+                            layer_bounds.origin.y,
+                            (layer_bounds.origin.x + layer_bounds.size.w) - (gbc_bounds.origin.x + gbc_bounds.size.w), 
+                            layer_bounds.size.h);
+  GRect top_frame = GRect(layer_bounds.origin.x, 
+                          layer_bounds.origin.y,
+                          layer_bounds.size.w,
+                          gbc_bounds.origin.y - layer_bounds.origin.y);
+  GRect bottom_frame = GRect(layer_bounds.origin.x, 
+                             gbc_bounds.origin.y + gbc_bounds.size.h,
+                             layer_bounds.size.w,
+                             (layer_bounds.origin.y + layer_bounds.size.h) - (gbc_bounds.origin.y + gbc_bounds.size.h));
+
+  graphics_context_set_fill_color(ctx, GColorBlack);
+
+  graphics_fill_rect(ctx, left_frame, 0, GCornerNone);
+  graphics_fill_rect(ctx, right_frame, 0, GCornerNone);
+  graphics_fill_rect(ctx, top_frame, 0, GCornerNone);
+  graphics_fill_rect(ctx, bottom_frame, 0, GCornerNone);
+}
+
 
 static void main_window_load(Window *window) {
   Layer *window_layer = window_get_root_layer(window);
@@ -193,6 +222,10 @@ static void main_window_load(Window *window) {
   GBC_Graphics_set_screen_bounds(s_gbc_graphics, SCREEN_BOUNDS);
   GBC_Graphics_lcdc_set_enabled(s_gbc_graphics, false);
   s_game = Game_init(s_gbc_graphics, s_main_window, &s_settings);
+
+  // Graphics cover layer
+  s_frame_layer = layer_create(bounds);
+  layer_set_update_proc(s_frame_layer, frame_update_proc);
 
   // Main text
   s_main_text_layer = text_layer_create(GRect(bounds.origin.x, bounds.origin.y + STATUS_BAR_LAYER_HEIGHT + 30, bounds.size.w, bounds.size.h - STATUS_BAR_LAYER_HEIGHT));
@@ -223,6 +256,7 @@ static void main_window_load(Window *window) {
                                               StatusBarLayerSeparatorModeNone);
 
   // Add to Window
+  layer_add_child(window_layer, s_frame_layer);
   layer_add_child(window_layer, text_layer_get_layer(s_main_text_layer));
   layer_add_child(window_layer, text_layer_get_layer(s_sub_text_layer));
   layer_add_child(window_layer, status_bar_layer_get_layer(s_status_bar));

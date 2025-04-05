@@ -150,9 +150,7 @@ void Player_set_up_username_text(Player *player) {
     text_layer_set_font(player->text_layer, font);
     text_layer_set_text(player->text_layer, player->username);
     text_layer_set_background_color(player->text_layer, GColorWhite);
-    layer_add_child(window_layer, text_layer_get_layer(player->text_layer));
-    // TODO: I think the text layer should be a child of a game layer, 
-    // otheriwse it will go on top of other layers as players pop in?
+    layer_insert_above_sibling(text_layer_get_layer(player->text_layer), player->graphics->graphics_layer);
     Player_render_username(player);
 }
 
