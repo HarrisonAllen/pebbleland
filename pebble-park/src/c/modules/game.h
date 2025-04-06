@@ -8,6 +8,7 @@
 #include "../pebble-gbc-graphics-advanced/pebble-gbc-graphics-advanced.h"
 #include "windows/slide_layer.h"
 #include "background.h"
+#include "messages/message_queue.h"
 
 typedef struct _game Game;
 struct _game {
@@ -21,6 +22,7 @@ struct _game {
     GBitmap *icon_up, *icon_middle, *icon_down;
     SlideLayer *notification;
     Background *background;
+    MessageQueue *message_queue;
 };
 
 Game *Game_init(GBC_Graphics *graphics, Window *window, ClaySettings *settings);
@@ -51,4 +53,6 @@ void Game_back_handler(Game *game);
 
 void Game_focus_handler(Game *game, bool in_focus);
 
-void Game_show_notification(Game *game, char *text, bool small);
+void Game_show_notification(Game *game, char *text);
+
+void Game_queue_notification(Game *game, char *text);

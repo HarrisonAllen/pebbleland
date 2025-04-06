@@ -118,10 +118,12 @@ void Player_step(Player *player) {
 
 void Player_hide(Player *player) {
     GBC_Graphics_oam_set_sprite_hidden(player->graphics, player->sprite_number, true);
+    layer_set_hidden(text_layer_get_layer(player->text_layer), true);
 }
 
 void Player_show(Player *player) {
     GBC_Graphics_oam_set_sprite_hidden(player->graphics, player->sprite_number, false);
+    layer_set_hidden(text_layer_get_layer(player->text_layer), false);
 }
 
 void Player_deactivate(Player *player) {

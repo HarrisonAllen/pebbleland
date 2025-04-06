@@ -18,6 +18,7 @@ Game *Game_init(GBC_Graphics *graphics, Window *window, ClaySettings *settings) 
     for (int i = 1; i < MAX_PLAYERS; i++) {
         game->players[i] = Player_initialize(i, graphics, game->background, settings, game->player_one, window);
     }
+    game->message_queue = MessageQueue_init();
     return game;
 }
 
@@ -36,6 +37,8 @@ void Game_destroy(Game *game) {
         gbitmap_destroy(game->icon_down);
     if (game->graphics != NULL)
         Background_destroy(game->background);
+    if (game->message_queue != NULL)
+        MessageQueue_destroy(game->message_queue);
         
     if (game != NULL) {
         free(game);
@@ -76,7 +79,7 @@ void Game_start(Game *game) {
     // And show welcome message
     char welcome_text[POPUP_TEXT_LEN];
     snprintf(welcome_text, POPUP_TEXT_LEN, "Welcome, %s!", game->settings->Username);
-    Game_show_notification(game, welcome_text, false);
+    Game_queue_notification(game, welcome_text);
 }
 
 int Game_get_first_inactive_player_index(Game *game) {
@@ -144,7 +147,7 @@ void Game_add_player(Game *game, char *username, int x, int y) {
 
             char connect_message[40];
             snprintf(connect_message, 40, "%s connected", username);
-            Game_show_notification(game, connect_message, true);
+            Game_queue_notification(game, connect_message);
         }
     } else {
         APP_LOG(APP_LOG_LEVEL_WARNING, "User already active: %s", username);
@@ -158,7 +161,7 @@ void Game_remove_player(Game *game, char *username) {
 
         char disconnect_message[40];
         snprintf(disconnect_message, 40, "%s disconnected", username);
-        Game_show_notification(game, disconnect_message, true);
+        Game_queue_notification(game, disconnect_message);
     }
 }
 
@@ -205,6 +208,9 @@ void Game_step(Game *game) {
         }
     }
     if (!game->paused) {
+        if (game->notification == NULL && !MessageQueue_is_empty(game->message_queue)) {
+            Game_show_notification(game, MessageQueue_pop(game->message_queue));
+        }
         if (game->settings->Tilt) {
             Player_set_tilt_direction(game->player_one, Game_calculate_tilt(game));
         }
@@ -248,9 +254,20 @@ void Game_release_notification(void *context) {
     ((Game *)context)->notification = NULL;
 }
 
-void Game_show_notification(Game *game, char *text, bool small) {
+void Game_show_notification(Game *game, char *text) {
     if (game->notification != NULL) {
         SlideLayer_cancel(game->notification);
     }
-    game->notification = SlideLayer_init(game->window, text, small, Game_release_notification, (void *) game);
+    game->notification = SlideLayer_init(game->window, text, Game_release_notification, (void *) game);
 }
+
+void Game_queue_notification(Game *game, char *text) {
+    if (!MessageQueue_push(game->message_queue, text)) {
+        APP_LOG(APP_LOG_LEVEL_WARNING, "Message queue full, notification not queued");
+    }
+}
+
+// New logic:
+// * Queue notification = add to queue
+// * On step, if game->notification == NULL, pop queue and show notification
+// * Release is same

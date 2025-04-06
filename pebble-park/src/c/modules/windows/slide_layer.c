@@ -15,9 +15,8 @@ void SlideLayer_update_proc(Layer *layer, GContext *ctx) {
   graphics_draw_round_rect(ctx, rect_bounds, POPUP_CORNER_RADIUS);
 
   // Text
-  int y_offset = slide_layer->small ? POPUP_TEXT_Y_OFFSET_SMALL : POPUP_TEXT_Y_OFFSET;
-  GFont font = fonts_get_system_font(slide_layer->small ? POPUP_FONT_SMALL : POPUP_FONT);
-  GRect text_bounds = GRect(layer_bounds.origin.x + POPUP_BORDER_THICKNESS, rect_bounds.origin.y + y_offset, layer_bounds.size.w - 2 * POPUP_BORDER_THICKNESS, layer_bounds.size.h - y_offset);
+  GFont font = fonts_get_system_font(POPUP_FONT);
+  GRect text_bounds = GRect(layer_bounds.origin.x + POPUP_BORDER_THICKNESS, rect_bounds.origin.y + POPUP_TEXT_Y_OFFSET, layer_bounds.size.w - 2 * POPUP_BORDER_THICKNESS, layer_bounds.size.h - POPUP_TEXT_Y_OFFSET);
   graphics_draw_text(ctx, slide_layer->text, font, text_bounds, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 }
 
@@ -45,7 +44,7 @@ void SlideLayer_anim_out_stop_handler(Animation *animation, bool finished, void 
 
 void SlideLayer_create(SlideLayer *slide_layer) {
   // window_set_background_color(window, GColorClear);
-  int height = slide_layer->small ? POPUP_HEIGHT_SMALL : POPUP_HEIGHT;
+  int height = POPUP_HEIGHT;
   
   Layer *window_layer = window_get_root_layer(slide_layer->window);
   GRect bounds = layer_get_bounds(window_layer);
@@ -100,14 +99,13 @@ void SlideLayer_window_unload(Window *window) {
   window_destroy(window);
 }
 
-SlideLayer *SlideLayer_init(Window *window, char *text, bool small, void (*destroy_callback)(), void *destroy_context) {
+SlideLayer *SlideLayer_init(Window *window, char *text, void (*destroy_callback)(), void *destroy_context) {
   SlideLayer *slide_layer = NULL;
   slide_layer = malloc(sizeof(SlideLayer));
   if (slide_layer == NULL)
       return NULL;
   slide_layer->window = window;
   strcpy(slide_layer->text, text);
-  slide_layer->small = small;
   slide_layer->destroy_callback = destroy_callback;
   slide_layer->destroy_context = destroy_context;
 
