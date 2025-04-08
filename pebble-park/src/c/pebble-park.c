@@ -267,6 +267,7 @@ static void main_window_unload(Window *window) {
   status_bar_layer_destroy(s_status_bar);
   text_layer_destroy(s_main_text_layer);
   text_layer_destroy(s_sub_text_layer);
+  layer_destroy(s_frame_layer);
   Game_destroy(s_game);
   GBC_Graphics_destroy(s_gbc_graphics);
   disconnect(s_settings.Username);
