@@ -3,6 +3,7 @@
 #include "../windows/text_window.h"
 #include "user_menu.h"
 #include "settings_menu.h"
+#include "../windows/conf_window.h"
 
 void MainMenu_window_load(Window *window) {
     MainMenu *main_menu = (MainMenu *) (window_get_user_data(window));
@@ -47,9 +48,16 @@ void MainMenu_destroy(MainMenu *main_menu) {
     }
 }
 
-void MainMenu_callback(int index, void *ctx) {
+void MainMenu_logout_callback(bool logout_chosen, void *context) {
+    MainMenu *main_menu = (MainMenu *) (context);
+    if (logout_chosen) {
+        window_stack_pop_all(true);
+    }
+}
+
+void MainMenu_callback(int index, void *context) {
     // TODO: use game callback instead
-    MainMenu *main_menu = (MainMenu *) (ctx);
+    MainMenu *main_menu = (MainMenu *) (context);
     if (index == MENU_ITEM_INFO) {
         char text_buffer[60];
         snprintf(text_buffer, 60, "Player information for %s will go here", main_menu->players[0]->username);
@@ -64,8 +72,7 @@ void MainMenu_callback(int index, void *ctx) {
     } else if (index == MENU_ITEM_HELP) {
         // TODO: pop up help menu
     } else if (index == MENU_ITEM_LOGOUT) {
-        // TODO: Add confirmation
-        window_stack_pop_all(true);
+        ConfWindow_init("Are you sure you want to log out?", MainMenu_logout_callback, (void *) main_menu);
     }
 }
 

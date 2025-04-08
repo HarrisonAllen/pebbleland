@@ -69,38 +69,13 @@
         },
         {
             "type": "bitmap", 
-            "name": "ICON_DOWN", 
-            "file": "icons/icon_down.png"
+            "name": "ICON_CHECK", 
+            "file": "icons/icon_check.png"
         },
         {
             "type": "bitmap", 
-            "name": "ICON_LEFT", 
-            "file": "icons/icon_left.png"
-        },
-        {
-            "type": "bitmap", 
-            "name": "ICON_UP", 
-            "file": "icons/icon_up.png"
-        },
-        {
-            "type": "bitmap", 
-            "name": "ICON_RIGHT", 
-            "file": "icons/icon_right.png"
-        },
-        {
-            "type": "bitmap", 
-            "name": "ICON_STOP", 
-            "file": "icons/icon_stop.png"
-        },
-        {
-            "type": "bitmap", 
-            "name": "ICON_TURN_LEFT", 
-            "file": "icons/icon_turn_left.png"
-        },
-        {
-            "type": "bitmap", 
-            "name": "ICON_TURN_RIGHT", 
-            "file": "icons/icon_turn_right.png"
+            "name": "ICON_CROSS", 
+            "file": "icons/icon_cross.png"
         }
       ]
     }

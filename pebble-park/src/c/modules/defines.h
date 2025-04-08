@@ -87,3 +87,8 @@
 #define POPUP_TEXT_Y_OFFSET -2
 #define POPUP_CORNER_RADIUS 10
 #define MESSAGE_QUEUE_LEN 10
+
+// Confirmation menu
+#define CONF_TEXT_LEN 40
+#define CONF_FONT FONT_KEY_GOTHIC_24_BOLD
+#define CONF_TEXT_INSET 4
