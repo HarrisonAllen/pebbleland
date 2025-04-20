@@ -3,6 +3,7 @@
 #include "communication.h"
 #include "menus/main_menu.h"
 #include "windows/slide_layer.h"
+#include "sprites/player_sprites.h"
 
 Game *Game_init(GBC_Graphics *graphics, Window *window, ClaySettings *settings) {
     Game *game = NULL;
@@ -50,15 +51,8 @@ void Game_start(Game *game) {
     GBC_Graphics_set_bg_palette_array(game->graphics, 0, BLANK_BG_PALETTE);
     window_set_background_color(game->window, GColorBlack);
 
-    // Load player one?
-    // TODO: load these in via args instead of hardcoded like this
-    ResHandle tilesheet_handle = resource_get_handle(RESOURCE_ID_PLAYER_TILESHEET);
-    size_t res_size = resource_size(tilesheet_handle);
-    uint8_t *sprite_data = (uint8_t*)malloc(res_size);
-    resource_load(tilesheet_handle, sprite_data, res_size);
-    Game_load_player(game, game->settings->Username, 0, sprite_data, PLAYER_ONE_PALETTE);
-    // Player_load_sprite_and_palette(game->player_one, sprite_data, PLAYER_ONE_PALETTE);
-    free(sprite_data);
+    // TODO: load in hairdo, clothes, colors from web
+    Game_load_player(game, game->settings->Username, 0, rand()%HAIRDO_COUNT, rand()%CLOTHES_COUNT, DEFAULT_SPRITE_PALETTE);
     int player_x = 0; // ((GBC_Graphics_get_screen_width(game->graphics) / 2 - (PLAYER_SPRITE_WIDTH / 2)) / 8) * 8;
     int player_y = 0; // ((GBC_Graphics_get_screen_height(game->graphics) / 2 - (PLAYER_SPRITE_HEIGHT / 2)) / 8) * 8;
     Player_set_position(game->player_one, player_x, player_y);
@@ -100,13 +94,13 @@ int Game_get_player_by_name(Game *game, char* username) {
     return -1;
 }
 
-void Game_load_player(Game *game, char* username, int player_number, uint8_t *sprite_buffer, uint8_t *palette_buffer) {
+void Game_load_player(Game *game, char* username, int player_number, int hairdo, int clothes, uint8_t *palette_buffer) {
     if (player_number == -1) {
         APP_LOG(APP_LOG_LEVEL_WARNING, "Invalid player slot %d. Cannot add user: %s", player_number, username);
     } else {
         Player *player = game->players[player_number];
         Player_set_username(player, username);
-        Player_load_sprite_and_palette(player, sprite_buffer, palette_buffer);
+        Player_load_sprite_and_palette(player, hairdo, clothes, palette_buffer);
         Player_activate(player);
     }
     GBC_Graphics_render(game->graphics);
@@ -136,13 +130,8 @@ void Game_add_player(Game *game, char *username, int x, int y) {
         if (new_player_number == -1) {
             APP_LOG(APP_LOG_LEVEL_WARNING, "Player array full! Cannot add user: %s", username);
         } else {
-            // TODO: replace with actual bytes from server
-            ResHandle tilesheet_handle = resource_get_handle(RESOURCE_ID_DEFAULT_TILESHEET);
-            size_t res_size = resource_size(tilesheet_handle);
-            uint8_t *sprite_data = (uint8_t*)malloc(res_size);
-            resource_load(tilesheet_handle, sprite_data, res_size);
-            Game_load_player(game, username, new_player_number, sprite_data, DEFAULT_PALETTE);
-            free(sprite_data);
+            // TODO: replace with sprite indices from server
+            Game_load_player(game, username, new_player_number, rand()%HAIRDO_COUNT, rand()%CLOTHES_COUNT, DEFAULT_SPRITE_PALETTE);
             Game_update_player(game, username, x, y);
 
             char connect_message[40];

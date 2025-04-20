@@ -1,0 +1,70 @@
+#pragma once
+#include <pebble.h>
+
+// Files
+#define HAIRDO_TILESHEET RESOURCE_ID_PLAYER_HAIRDOS
+#define CLOTHES_TILESHEET RESOURCE_ID_PLAYER_CLOTHES
+
+// Hairdos
+#define HAIRDO_COUNT 10
+#define HAIRDO_SPRITES_PER 3 // one for each direction, right will be left flipped
+#define HAIRDO_NUM_SPRITES (HAIRDO_COUNT * HAIRDO_SPRITES_PER)
+#define HAIRDO_WIDTH_TILES 2 // in tiles
+#define HAIRDO_HEIGHT_TILES 2 // in tiles
+#define HAIRDO_TILES_PER_SPRITE (HAIRDO_WIDTH_TILES * HAIRDO_HEIGHT_TILES)
+#define HAIRDO_TILES_PER_HAIRDO (HAIRDO_TILES_PER_SPRITE * HAIRDO_SPRITES_PER)
+#define HAIRDO_TOTAL_TILES (HAIRDO_NUM_SPRITES * HAIRDO_TILES_PER)
+
+// Clothes
+#define CLOTHES_COUNT 10
+#define CLOTHES_SPRITES_PER 8 // 3 for up down, 2 for left right
+#define CLOTHES_NUM_SPRITES (CLOTHES_COUNT * CLOTHES_SPRITES_PER)
+#define CLOTHES_WIDTH_TILES 2
+#define CLOTHES_HEIGHT_TILES 1
+#define CLOTHES_TILES_PER_SPRITE (CLOTHES_WIDTH_TILES * CLOTHES_HEIGHT_TILES)
+#define CLOTHES_TILES_PER_CLOTHES (CLOTHES_TILES_PER_SPRITE * CLOTHES_SPRITES_PER)
+#define CLOTHES_TOTAL_TILES (CLOTHES_NUM_SPRITES * CLOTHES_TILES_PER)
+#define CLOTHES_DOWN_SPRITE_START 0
+#define CLOTHES_LEFT_SPRITE_START 3
+#define CLOTHES_UP_SPRITE_START 5
+
+// Outfits (hairdo + clothes)
+#define OUTFIT_WIDTH 2
+#define OUTFIT_HEIGHT 3
+#define OUTFIT_TILES (OUTFIT_WIDTH * OUTFIT_HEIGHT)
+#define OUTFITS_PER CLOTHES_SPRITES_PER
+#define OUTFITS_TOTAL_TILES (OUTFITS_PER * OUTFIT_TILES)
+
+// Features
+#define OUTFIT_NUM_FEATURES 11
+#define OUTFIT_NUM_SHOES 1
+#define OUTFIT_NUM_LEGS 2
+#define OUTFIT_NUM_SHIRTS 5
+
+// Palettes
+#define PLAYER_PALETTE_OUTLINE 1
+#define PLAYER_PALETTE_BODY 2
+#define PLAYER_PALETTE_SHOE_MAJOR 3
+#define PLAYER_PALETTE_SHOE_MINOR 4
+#define PLAYER_PALETTE_LEGS_MAJOR 5
+#define PLAYER_PALETTE_LEGS_MINOR 6
+#define PLAYER_PALETTE_SHIRT_MAJOR 7
+#define PLAYER_PALETTE_SHIRT_MINOR 8
+#define PLAYER_PALETTE_SHIRT_ACCENT 9
+#define PLAYER_PALETTE_HAIR_MAJOR 10
+#define PLAYER_PALETTE_HAIR_MINOR 11
+
+// // Names
+// const char *FEATURE_NAMES[11] = {
+//     "Outline",
+//     "Body",
+//     "Shoes Primary",
+//     "Shoes Secondary",
+//     "Legs Primary",
+//     "Legs Secondary",
+//     "Shirt Primary",
+//     "Shirt Secondary",
+//     "Shirt Accent",
+//     "Hair Primary",
+//     "Hair Secondary"
+// };

@@ -1,6 +1,8 @@
 #include "player.h"
 #include "communication.h"
 #include "utility.h"
+#include "sprites/player_sprites.h"
+#include "sprites/outfit_handler.h"
 
 Player *Player_initialize(int number, GBC_Graphics *graphics, Background *background, ClaySettings *settings, Player *player_one, Window *window) {
     Player *player = NULL;
@@ -17,11 +19,11 @@ Player *Player_initialize(int number, GBC_Graphics *graphics, Background *backgr
     player->direction = D_DOWN;
     if (player->number == 0) {
         player->tile_offset = 0;
-        player->num_tiles = PLAYER_ONE_NUM_TILES;
+        player->num_tiles = OUTFITS_TOTAL_TILES;
         player->player_one = player;
     } else {
-        player->tile_offset = PLAYER_ONE_NUM_TILES + (player->number - 1) * PLAYER_SPRITE_NUM_TILES;
-        player->num_tiles = PLAYER_SPRITE_NUM_TILES;
+        player->tile_offset = OUTFITS_TOTAL_TILES + (player->number - 1) * OUTFIT_TILES;
+        player->num_tiles = OUTFIT_TILES;
         player->player_one = player_one;
     }
     GBC_Graphics_oam_set_sprite(player->graphics, player->sprite_number, 0, 0, player->tile_offset, GBC_Graphics_attr_make(0, PLAYER_VRAM, false, false, true), PLAYER_SPRITE_TILE_WIDTH - 1, PLAYER_SPRITE_TILE_HEIGHT - 1, 0, 0);
@@ -196,8 +198,8 @@ GPoint Player_get_screen_position(Player *player) {
     return GPoint(x, y);
 }
 
-void Player_load_sprite_and_palette(Player *player, uint8_t *sprite_data, uint8_t *palette_data) {
-    GBC_Graphics_load_from_buffer_into_vram(player->graphics, sprite_data, player->num_tiles, player->tile_offset, PLAYER_VRAM);
+void Player_load_sprite_and_palette(Player *player, int hairdo, int clothes, uint8_t *palette_data) {
+    load_outfit(hairdo, clothes, player->number == 0, player->tile_offset, player->sprite_number, PLAYER_VRAM, player->graphics);
     GBC_Graphics_set_sprite_palette_array(player->graphics, player->sprite_number, palette_data);
 }
 
@@ -231,8 +233,36 @@ void Player_render_username(Player *player) {
 
 void Player_render(Player *player) {
     if (!player->active) return;
-    if (player->number == 0) {
-        GBC_Graphics_oam_set_sprite_tile(player->graphics, player->sprite_number, player->tile_offset + PLAYER_SPRITE_NUM_TILES * (player->direction * 2 + player->walk_frame % 2));
+    if (player->number == 0) { // TODO implement this based on direction
+        int sprite_index = 0;
+        switch(player->direction) {
+            case D_DOWN:
+                if (player->walk_frame % 2 == 0) {
+                    sprite_index = CLOTHES_DOWN_SPRITE_START;
+                } else if (player->walk_frame == 1) {
+                    sprite_index = CLOTHES_DOWN_SPRITE_START + 1;
+                } else {
+                    sprite_index = CLOTHES_DOWN_SPRITE_START + 2;
+                }
+                break;
+            case D_LEFT:
+            case D_RIGHT:
+                sprite_index = CLOTHES_LEFT_SPRITE_START + player->walk_frame % 2;
+                break;
+            case D_UP:
+                if (player->walk_frame % 2 == 0) {
+                    sprite_index = CLOTHES_UP_SPRITE_START;
+                } else if (player->walk_frame == 1) {
+                    sprite_index = CLOTHES_UP_SPRITE_START + 1;
+                } else {
+                    sprite_index = CLOTHES_UP_SPRITE_START + 2;
+                }
+                break;
+            default:
+                break;
+        }
+        GBC_Graphics_oam_set_sprite_x_flip(player->graphics, player->sprite_number, player->direction == D_RIGHT);
+        GBC_Graphics_oam_set_sprite_tile(player->graphics, player->sprite_number, player->tile_offset + OUTFIT_TILES * sprite_index);
     } else {
         GBC_Graphics_oam_set_sprite_tile(player->graphics, player->sprite_number, player->tile_offset);
         int player_x_offset = player->x - player->player_one->x;

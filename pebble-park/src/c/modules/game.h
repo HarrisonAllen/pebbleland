@@ -33,7 +33,7 @@ void Game_start(Game *game);
     
 int Game_get_first_inactive_player_index(Game *game);
     
-void Game_load_player(Game *game, char* username, int player_number, uint8_t *sprite_buffer, uint8_t *palette_buffer);
+void Game_load_player(Game *game, char* username, int player_number, int hairdo, int outfit, uint8_t *palette_buffer);
     
 void Game_update_player(Game *game, char *username, int x, int y);
 

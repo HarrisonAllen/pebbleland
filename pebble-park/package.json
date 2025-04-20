@@ -59,6 +59,16 @@
         },
         {
           "type": "raw",
+          "name": "PLAYER_HAIRDOS",
+          "file": "sprites/hair_tilesheet.bin"
+        },
+        {
+          "type": "raw",
+          "name": "PLAYER_CLOTHES",
+          "file": "sprites/clothes_tilesheet.bin"
+        },
+        {
+          "type": "raw",
           "name": "BG_TILESHEET",
           "file": "backgrounds/bg_tilesheet-no-flips.bin"
         },

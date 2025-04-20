@@ -13,7 +13,7 @@ typedef enum {
     D_LEFT,
     D_UP,
     D_RIGHT,
-    D_MAX
+    D_MAX // not realy used, just for convenience
 } Direction;
 
 typedef enum {

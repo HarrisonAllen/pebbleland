@@ -59,7 +59,7 @@ void Player_set_position(Player *player, int x, int y);
 
 void Player_move(Player *player, int x, int y);
 
-void Player_load_sprite_and_palette(Player *player, uint8_t *sprite_data, uint8_t *palette_data);
+void Player_load_sprite_and_palette(Player *player, int hairdo, int clothes, uint8_t *palette_data);
 
 void Player_render_username(Player *player);
 
