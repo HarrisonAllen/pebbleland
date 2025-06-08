@@ -51,6 +51,10 @@ void Game_start(Game *game) {
     GBC_Graphics_set_bg_palette_array(game->graphics, 0, BLANK_BG_PALETTE);
     window_set_background_color(game->window, GColorBlack);
 
+    // Load sprites
+    GBC_Graphics_load_entire_tilesheet_into_vram(game->graphics, HAIRDO_TILESHEET, HAIRDO_VRAM_START, PLAYER_VRAM);
+    GBC_Graphics_load_entire_tilesheet_into_vram(game->graphics, CLOTHES_TILESHEET, CLOTHES_VRAM_START, PLAYER_VRAM);
+
     // TODO: load in hairdo, clothes, colors from web
     Game_load_player(game, game->settings->Username, 0, rand()%HAIRDO_COUNT, rand()%CLOTHES_COUNT, DEFAULT_SPRITE_PALETTE);
     int player_x = 0; // ((GBC_Graphics_get_screen_width(game->graphics) / 2 - (PLAYER_SPRITE_WIDTH / 2)) / 8) * 8;

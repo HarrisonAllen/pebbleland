@@ -2,7 +2,6 @@
 #include "communication.h"
 #include "utility.h"
 #include "sprites/player_sprites.h"
-#include "sprites/outfit_handler.h"
 
 Player *Player_initialize(int number, GBC_Graphics *graphics, Background *background, ClaySettings *settings, Player *player_one, Window *window) {
     Player *player = NULL;
@@ -15,18 +14,19 @@ Player *Player_initialize(int number, GBC_Graphics *graphics, Background *backgr
     player->settings = settings;
     player->window = window;
     player->active = false;
-    player->sprite_number = MAX_PLAYERS - (player->number + 1);
+    player->hairdo_sprite = MAX_PLAYERS * 2 - (player->number + 1) * 2;
+    player->clothes_sprite = MAX_PLAYERS * 2 - (player->number + 1) * 2 + 1;
     player->direction = D_DOWN;
+    // player->tile_offset =  player->number * OUTFIT_TILES;
+    player->num_tiles = OUTFIT_TILES;
     if (player->number == 0) {
-        player->tile_offset = 0;
-        player->num_tiles = OUTFITS_TOTAL_TILES;
         player->player_one = player;
     } else {
-        player->tile_offset = OUTFITS_TOTAL_TILES + (player->number - 1) * OUTFIT_TILES;
-        player->num_tiles = OUTFIT_TILES;
         player->player_one = player_one;
     }
-    GBC_Graphics_oam_set_sprite(player->graphics, player->sprite_number, 0, 0, player->tile_offset, GBC_Graphics_attr_make(0, PLAYER_VRAM, false, false, true), PLAYER_SPRITE_TILE_WIDTH - 1, PLAYER_SPRITE_TILE_HEIGHT - 1, 0, 0);
+    uint8_t attrs = GBC_Graphics_attr_make(0, PLAYER_VRAM, false, false, true);
+    GBC_Graphics_oam_set_sprite(player->graphics, player->hairdo_sprite, 0, 0, HAIRDO_VRAM_START, attrs, HAIRDO_WIDTH_TILES - 1, HAIRDO_HEIGHT_TILES - 1, 0, 0);
+    GBC_Graphics_oam_set_sprite(player->graphics, player->clothes_sprite, 0, 0, CLOTHES_VRAM_START, attrs, CLOTHES_WIDTH_TILES - 1, CLOTHES_HEIGHT_TILES - 1, 0, 0);
     Player_render(player);
     return player;
 }
@@ -119,13 +119,17 @@ void Player_step(Player *player) {
 }
 
 void Player_hide(Player *player) {
-    GBC_Graphics_oam_set_sprite_hidden(player->graphics, player->sprite_number, true);
+    GBC_Graphics_oam_set_sprite_hidden(player->graphics, player->hairdo_sprite, true);
+    GBC_Graphics_oam_set_sprite_hidden(player->graphics, player->clothes_sprite, true);
     layer_set_hidden(text_layer_get_layer(player->text_layer), true);
+    Player_render(player);
 }
 
 void Player_show(Player *player) {
-    GBC_Graphics_oam_set_sprite_hidden(player->graphics, player->sprite_number, false);
+    GBC_Graphics_oam_set_sprite_hidden(player->graphics, player->hairdo_sprite, false);
+    GBC_Graphics_oam_set_sprite_hidden(player->graphics, player->clothes_sprite, false);
     layer_set_hidden(text_layer_get_layer(player->text_layer), false);
+    Player_render(player);
 }
 
 void Player_deactivate(Player *player) {
@@ -173,9 +177,13 @@ void Player_set_position(Player *player, int x, int y) {
     y = clamp(PLAYER_MIN_Y, y, PLAYER_MAX_Y);
     if (player->number == 0) {
         GBC_Graphics_oam_set_sprite_pos(player->graphics, 
-                                    player->sprite_number, 
+                                    player->hairdo_sprite, 
                                     PLAYER_SPRITE_SCREEN_X_OFFSET,
-                                    PLAYER_SPRITE_SCREEN_Y_OFFSET);
+                                    PLAYER_SPRITE_SCREEN_Y_OFFSET - 2 * ((player->walk_frame + 1) % 2));
+        GBC_Graphics_oam_set_sprite_pos(player->graphics, 
+                                    player->clothes_sprite, 
+                                    PLAYER_SPRITE_SCREEN_X_OFFSET,
+                                    PLAYER_SPRITE_SCREEN_Y_OFFSET + HAIRDO_HEIGHT_PIXELS - 2 * ((player->walk_frame + 1) % 2));
         Background_move(player->background, x - player->x, y - player->y);
     }
     player->x = x;
@@ -188,19 +196,22 @@ void Player_move(Player *player, int x, int y) {
 
 GPoint Player_get_screen_position(Player *player) {
     int x = GBC_Graphics_get_screen_x_origin(player->graphics)
-            + GBC_Graphics_oam_get_sprite_x(player->graphics, player->sprite_number)
+            + GBC_Graphics_oam_get_sprite_x(player->graphics, player->hairdo_sprite)
             - GBC_SPRITE_OFFSET_X
             + PLAYER_SPRITE_WIDTH / 2;
     int y = GBC_Graphics_get_screen_y_origin(player->graphics)
-            + GBC_Graphics_oam_get_sprite_y(player->graphics, player->sprite_number)
+            + GBC_Graphics_oam_get_sprite_y(player->graphics, player->hairdo_sprite)
             - GBC_SPRITE_OFFSET_Y
             + PLAYER_SPRITE_HEIGHT / 2;
     return GPoint(x, y);
 }
 
 void Player_load_sprite_and_palette(Player *player, int hairdo, int clothes, uint8_t *palette_data) {
-    load_outfit(hairdo, clothes, player->number == 0, player->tile_offset, player->sprite_number, PLAYER_VRAM, player->graphics);
-    GBC_Graphics_set_sprite_palette_array(player->graphics, player->sprite_number, palette_data);
+    player->hairdo = hairdo;
+    player->clothes = clothes;
+    // player->palette = palette;
+    GBC_Graphics_set_sprite_palette_array(player->graphics, player->hairdo_sprite, palette_data);
+    GBC_Graphics_set_sprite_palette_array(player->graphics, player->clothes_sprite, palette_data);
 }
 
 static bool is_player_on_screen(int player_x, int player_y, int player_one_x, int player_one_y) {
@@ -215,7 +226,8 @@ static bool is_player_on_screen(int player_x, int player_y, int player_one_x, in
 void Player_render_username(Player *player) {
     if (player->text_layer == NULL) return;
     Layer *layer = text_layer_get_layer(player->text_layer);
-    if (player->number == 0 || !is_player_on_screen(player->x, player->y, player->player_one->x, player->player_one->y)) {
+    bool on_screen = is_player_on_screen(player->x, player->y, player->player_one->x, player->player_one->y);
+    if (player->number == 0 || !on_screen) {
         layer_set_hidden(layer, true);
     } else {
         GRect text_bounds = layer_get_bounds(layer);
@@ -231,48 +243,75 @@ void Player_render_username(Player *player) {
     }
 }
 
+void Player_set_sprites(Player *player) {
+    uint8_t hairdo_tile = HAIRDO_VRAM_START;
+    hairdo_tile += player->hairdo * HAIRDO_TILES_PER_HAIRDO;
+    bool hairdo_flipped = false;
+    // down: 0, up: 2, left: 1, right: left flipped
+    switch (player->direction) {
+        case D_DOWN:
+            hairdo_tile += 0;
+            break;
+        case D_UP:
+            hairdo_tile += 2 * HAIRDO_TILES_PER_SPRITE;
+            break;
+        case D_RIGHT:
+            hairdo_flipped = true;
+        case D_LEFT:
+            hairdo_tile += 1 * HAIRDO_TILES_PER_SPRITE;
+            break;
+        default:
+            break;
+    }
+
+    uint8_t clothes_tile = CLOTHES_VRAM_START;
+    bool clothes_flipped = false;
+    clothes_tile += player->clothes * CLOTHES_TILES_PER_SPRITE;
+    switch (player->direction) {
+        case D_DOWN:
+            clothes_tile += 0 * CLOTHES_TILES_PER_DIRECTION;
+            clothes_flipped = player->walk_frame == 3;
+            break;
+        case D_UP:
+            clothes_tile += 2 * CLOTHES_TILES_PER_DIRECTION;
+            clothes_flipped = player->walk_frame == 3;
+            break;
+        case D_RIGHT:
+            clothes_flipped = true;
+        case D_LEFT:
+            clothes_tile += 1 * CLOTHES_TILES_PER_DIRECTION;
+            break;
+        default:
+            break;
+    }
+    clothes_tile += (player->walk_frame % 2) * CLOTHES_TILES_PER_STEP;
+    
+    GBC_Graphics_oam_set_sprite_tile(player->graphics, player->hairdo_sprite, hairdo_tile);
+    GBC_Graphics_oam_set_sprite_x_flip(player->graphics, player->hairdo_sprite, hairdo_flipped);
+    GBC_Graphics_oam_set_sprite_tile(player->graphics, player->clothes_sprite, clothes_tile);
+    GBC_Graphics_oam_set_sprite_x_flip(player->graphics, player->clothes_sprite, clothes_flipped);
+}
+
 void Player_render(Player *player) {
     if (!player->active) return;
-    if (player->number == 0) { // TODO implement this based on direction
-        int sprite_index = 0;
-        switch(player->direction) {
-            case D_DOWN:
-                if (player->walk_frame % 2 == 0) {
-                    sprite_index = CLOTHES_DOWN_SPRITE_START;
-                } else if (player->walk_frame == 1) {
-                    sprite_index = CLOTHES_DOWN_SPRITE_START + 1;
-                } else {
-                    sprite_index = CLOTHES_DOWN_SPRITE_START + 2;
-                }
-                break;
-            case D_LEFT:
-            case D_RIGHT:
-                sprite_index = CLOTHES_LEFT_SPRITE_START + player->walk_frame % 2;
-                break;
-            case D_UP:
-                if (player->walk_frame % 2 == 0) {
-                    sprite_index = CLOTHES_UP_SPRITE_START;
-                } else if (player->walk_frame == 1) {
-                    sprite_index = CLOTHES_UP_SPRITE_START + 1;
-                } else {
-                    sprite_index = CLOTHES_UP_SPRITE_START + 2;
-                }
-                break;
-            default:
-                break;
-        }
-        GBC_Graphics_oam_set_sprite_x_flip(player->graphics, player->sprite_number, player->direction == D_RIGHT);
-        GBC_Graphics_oam_set_sprite_tile(player->graphics, player->sprite_number, player->tile_offset + OUTFIT_TILES * sprite_index);
-    } else {
-        GBC_Graphics_oam_set_sprite_tile(player->graphics, player->sprite_number, player->tile_offset);
+    Player_set_sprites(player);
+    if (player->number != 0) {
         int player_x_offset = player->x - player->player_one->x;
         int player_y_offset = player->y - player->player_one->y;
-        GBC_Graphics_oam_set_sprite_hidden(player->graphics, player->sprite_number, 
-            !is_player_on_screen(player->x, player->y, player->player_one->x, player->player_one->y));
+        bool on_screen = is_player_on_screen(player->x, player->y, player->player_one->x, player->player_one->y);
+        if (on_screen) {
+            Player_show(player);
+        } else {
+            Player_hide(player);
+        }
         GBC_Graphics_oam_set_sprite_pos(player->graphics, 
-            player->sprite_number, 
+            player->hairdo_sprite, 
             PLAYER_SPRITE_SCREEN_X_OFFSET + player_x_offset,
-            PLAYER_SPRITE_SCREEN_Y_OFFSET + player_y_offset);
+            PLAYER_SPRITE_SCREEN_Y_OFFSET + player_y_offset - 2 * ((player->walk_frame + 1) % 2));
+        GBC_Graphics_oam_set_sprite_pos(player->graphics, 
+            player->clothes_sprite, 
+            PLAYER_SPRITE_SCREEN_X_OFFSET + player_x_offset,
+            PLAYER_SPRITE_SCREEN_Y_OFFSET + player_y_offset + HAIRDO_HEIGHT_PIXELS - 2 * ((player->walk_frame + 1) % 2));
         Player_render_username(player);
     }
 }
@@ -280,7 +319,6 @@ void Player_render(Player *player) {
 void Player_set_direction(Player *player, Direction direction) {
     if (direction != D_MAX) {
         player->direction = direction;
-        Player_render(player);
     }
 }
 

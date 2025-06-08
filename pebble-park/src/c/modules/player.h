@@ -21,9 +21,12 @@ struct _player {
     Direction direction;
     Direction tilt_direction;
     int number;
-    int sprite_number;
+    int hairdo_sprite;
+    int clothes_sprite;
     int tile_offset;
     int num_tiles;
+    int hairdo;
+    int clothes;
     uint8_t palette[GBC_PALETTE_NUM_BYTES];
     char username[USERNAME_MAX_LEN+1];
     PlayerState state;

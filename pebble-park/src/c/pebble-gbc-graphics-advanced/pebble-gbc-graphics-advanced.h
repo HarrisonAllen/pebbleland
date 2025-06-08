@@ -7,7 +7,7 @@
  * on the Pebble smartwatch, with some Game Boy Advance style modifications
  * @file pebble-gbc-graphics-advanced.h
  * @author Harrison Allen
- * @version 1.5.1 3/23/2025
+ * @version 1.5.1 6/8/2025
  * 
  * Questions? Feel free to send me an email at harrisonallen555@gmail.com
  */
@@ -52,8 +52,8 @@
 #define GBC_PALETTE_BANK_NUM_BYTES 128
 #define GBC_NUM_SPRITES 40 ///> The maximum number of sprites
 #define GBC_SPRITE_NUM_BYTES 6 ///> The number of bytes per sprite
-#define GBC_PALETTE_SPRITE_NUM_PALETTES 32
-#define GBC_PALETTE_SPRITE_BANK_NUM_BYTES 512
+#define GBC_PALETTE_SPRITE_NUM_PALETTES 40
+#define GBC_PALETTE_SPRITE_BANK_NUM_BYTES 640 ///> 40 pals * 16 B/pal = 640
 /**
  * The size of the OAM, calculated by:
  * 6 bytes per sprite * 40 sprite slots = 240 bytes
@@ -422,6 +422,18 @@ uint8_t GBC_Graphics_get_screen_height(GBC_Graphics *self);
  */
 void GBC_Graphics_vram_move_tiles(GBC_Graphics *self, uint8_t src_vram_bank, uint8_t src_tile_offset, 
                              uint8_t dest_vram_bank, uint8_t dest_tile_offset, uint8_t num_tiles_to_move, bool swap);
+
+                             
+/**
+ * Loads an entire tilesheet in storage into vram
+ * 
+ * @param self A pointer to the target GBC Graphics object
+ * @param tilesheet_resource The resource ID of the tilesheet to load from
+ * @param vram_tile_offset The tile number offset on the VRAM to loading into
+ * @param vram_bank_number The VRAM bank to load into
+ */
+void GBC_Graphics_load_entire_tilesheet_into_vram(GBC_Graphics *self, uint32_t tilesheet_resource,
+                                            uint16_t vram_tile_offset, uint8_t vram_bank_number);
 
 /**
  * Loads tiles from a tilesheet in storage into vram

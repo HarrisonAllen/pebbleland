@@ -1,4 +1,4 @@
-var base_url = "10.0.0.46:5001";
+var base_url = "10.0.0.51:5001";
 
 // Import the Clay package
 var Clay = require('pebble-clay');
@@ -66,7 +66,7 @@ function login(username) {
         'watch_token': Pebble.getAccountToken(),
         'account_token': Pebble.getWatchToken(),
         'username': username,
-        // 'username': 'Emulator',
+        // 'username': 'Basalt',
     };
 
     send_to_server(login_info);

@@ -66,14 +66,11 @@ void Background_load_tiles_in_direction(Background *background, Direction direct
 
 
 void Background_load_resources(Background *background) {
-    ResHandle handle = resource_get_handle(RESOURCE_ID_BG_TILESHEET);
-    size_t res_size = resource_size(handle);
-    uint16_t tiles_to_load = res_size / GBC_TILE_NUM_BYTES;
-    GBC_Graphics_load_from_tilesheet_into_vram(background->graphics, RESOURCE_ID_BG_TILESHEET, 0, tiles_to_load, 0, BG_VRAM);
+    GBC_Graphics_load_entire_tilesheet_into_vram(background->graphics, RESOURCE_ID_BG_TILESHEET, 0, BG_VRAM);
     GBC_Graphics_set_bg_palette_array(background->graphics, 0, BG_PALETTE);
 
-    handle = resource_get_handle(RESOURCE_ID_BG_TILEMAP);
-    res_size = resource_size(handle);
+    ResHandle handle = resource_get_handle(RESOURCE_ID_BG_TILEMAP);
+    size_t res_size = resource_size(handle);
     if (background->tilemap != NULL) {
         free(background->tilemap);
         background->tilemap = NULL;

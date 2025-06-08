@@ -123,6 +123,15 @@ void GBC_Graphics_vram_move_tiles(GBC_Graphics *self, uint8_t src_vram_bank, uin
     }
 }
 
+void GBC_Graphics_load_entire_tilesheet_into_vram(GBC_Graphics *self, uint32_t tilesheet_resource, 
+                                            uint16_t vram_tile_offset, uint8_t vram_bank_number) {
+    ResHandle tilesheet_handle = resource_get_handle(tilesheet_resource);
+    size_t res_size = resource_size(tilesheet_handle);
+    uint8_t *vram_offset = self->vram + GBC_VRAM_BANK_NUM_BYTES * vram_bank_number + vram_tile_offset * GBC_TILE_NUM_BYTES;
+    
+    resource_load(tilesheet_handle, vram_offset, res_size);
+}
+
 void GBC_Graphics_load_from_tilesheet_into_vram(GBC_Graphics *self, uint32_t tilesheet_resource, uint16_t tilesheet_tile_offset, 
                                                 uint16_t tiles_to_load, uint16_t vram_tile_offset, uint8_t vram_bank_number) {
     ResHandle tilesheet_handle = resource_get_handle(tilesheet_resource);
