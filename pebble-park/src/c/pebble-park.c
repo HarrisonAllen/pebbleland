@@ -129,7 +129,11 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
 
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
   if (s_state == S_LOGIN) {
-    connect(s_settings.Username);
+    if (!OFFLINE_MODE) {
+      connect(s_settings.Username);
+    } else {
+      start_game();
+    }
   } else if (s_state == S_PLAY) {
     Game_select_handler(s_game);
   }

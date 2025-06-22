@@ -2,6 +2,7 @@
 #include "communication.h"
 #include "utility.h"
 #include "sprites/player_sprites.h"
+#include "palettes/sprite_palettes.h"
 
 Player *Player_initialize(int number, GBC_Graphics *graphics, Background *background, ClaySettings *settings, Player *player_one, Window *window) {
     Player *player = NULL;
@@ -14,7 +15,7 @@ Player *Player_initialize(int number, GBC_Graphics *graphics, Background *backgr
     player->settings = settings;
     player->window = window;
     player->active = false;
-    player->hairdo_sprite = MAX_PLAYERS * 2 - (player->number + 1) * 2;
+    player->hair_sprite = MAX_PLAYERS * 2 - (player->number + 1) * 2;
     player->clothes_sprite = MAX_PLAYERS * 2 - (player->number + 1) * 2 + 1;
     player->direction = D_DOWN;
     // player->tile_offset =  player->number * OUTFIT_TILES;
@@ -25,7 +26,7 @@ Player *Player_initialize(int number, GBC_Graphics *graphics, Background *backgr
         player->player_one = player_one;
     }
     uint8_t attrs = GBC_Graphics_attr_make(0, PLAYER_VRAM, false, false, true);
-    GBC_Graphics_oam_set_sprite(player->graphics, player->hairdo_sprite, 0, 0, HAIRDO_VRAM_START, attrs, HAIRDO_WIDTH_TILES - 1, HAIRDO_HEIGHT_TILES - 1, 0, 0);
+    GBC_Graphics_oam_set_sprite(player->graphics, player->hair_sprite, 0, 0, HAIR_VRAM_START, attrs, HAIR_WIDTH_TILES - 1, HAIR_HEIGHT_TILES - 1, 0, 0);
     GBC_Graphics_oam_set_sprite(player->graphics, player->clothes_sprite, 0, 0, CLOTHES_VRAM_START, attrs, CLOTHES_WIDTH_TILES - 1, CLOTHES_HEIGHT_TILES - 1, 0, 0);
     Player_render(player);
     return player;
@@ -112,21 +113,23 @@ void Player_step(Player *player) {
 
         if (player->walk_frame == 0) {
             Player_pop_input(player);
-            broadcast_position(player->x, player->y);
+            if (!OFFLINE_MODE) {
+                broadcast_position(player->x, player->y);
+            }
         }
     }
     Player_render(player);
 }
 
 void Player_hide(Player *player) {
-    GBC_Graphics_oam_set_sprite_hidden(player->graphics, player->hairdo_sprite, true);
+    GBC_Graphics_oam_set_sprite_hidden(player->graphics, player->hair_sprite, true);
     GBC_Graphics_oam_set_sprite_hidden(player->graphics, player->clothes_sprite, true);
     layer_set_hidden(text_layer_get_layer(player->text_layer), true);
     Player_render(player);
 }
 
 void Player_show(Player *player) {
-    GBC_Graphics_oam_set_sprite_hidden(player->graphics, player->hairdo_sprite, false);
+    GBC_Graphics_oam_set_sprite_hidden(player->graphics, player->hair_sprite, false);
     GBC_Graphics_oam_set_sprite_hidden(player->graphics, player->clothes_sprite, false);
     layer_set_hidden(text_layer_get_layer(player->text_layer), false);
     Player_render(player);
@@ -177,13 +180,13 @@ void Player_set_position(Player *player, int x, int y) {
     y = clamp(PLAYER_MIN_Y, y, PLAYER_MAX_Y);
     if (player->number == 0) {
         GBC_Graphics_oam_set_sprite_pos(player->graphics, 
-                                    player->hairdo_sprite, 
+                                    player->hair_sprite, 
                                     PLAYER_SPRITE_SCREEN_X_OFFSET,
                                     PLAYER_SPRITE_SCREEN_Y_OFFSET - 2 * ((player->walk_frame + 1) % 2));
         GBC_Graphics_oam_set_sprite_pos(player->graphics, 
                                     player->clothes_sprite, 
                                     PLAYER_SPRITE_SCREEN_X_OFFSET,
-                                    PLAYER_SPRITE_SCREEN_Y_OFFSET + HAIRDO_HEIGHT_PIXELS - 2 * ((player->walk_frame + 1) % 2));
+                                    PLAYER_SPRITE_SCREEN_Y_OFFSET + HAIR_HEIGHT_PIXELS - 2 * ((player->walk_frame + 1) % 2));
         Background_move(player->background, x - player->x, y - player->y);
     }
     player->x = x;
@@ -196,22 +199,25 @@ void Player_move(Player *player, int x, int y) {
 
 GPoint Player_get_screen_position(Player *player) {
     int x = GBC_Graphics_get_screen_x_origin(player->graphics)
-            + GBC_Graphics_oam_get_sprite_x(player->graphics, player->hairdo_sprite)
+            + GBC_Graphics_oam_get_sprite_x(player->graphics, player->hair_sprite)
             - GBC_SPRITE_OFFSET_X
             + PLAYER_SPRITE_WIDTH / 2;
     int y = GBC_Graphics_get_screen_y_origin(player->graphics)
-            + GBC_Graphics_oam_get_sprite_y(player->graphics, player->hairdo_sprite)
+            + GBC_Graphics_oam_get_sprite_y(player->graphics, player->hair_sprite)
             - GBC_SPRITE_OFFSET_Y
             + PLAYER_SPRITE_HEIGHT / 2;
     return GPoint(x, y);
 }
 
-void Player_load_sprite_and_palette(Player *player, int hairdo, int clothes, uint8_t *palette_data) {
-    player->hairdo = hairdo;
-    player->clothes = clothes;
-    // player->palette = palette;
-    GBC_Graphics_set_sprite_palette_array(player->graphics, player->hairdo_sprite, palette_data);
-    GBC_Graphics_set_sprite_palette_array(player->graphics, player->clothes_sprite, palette_data);
+void Player_load_sprite_and_palette(Player *player, int hair, int shirt, int pants, uint8_t *colors) {
+    player->hair = hair;
+    player->shirt = shirt;
+    player->pants = pants;
+    player->hair_color = colors[0];
+    player->shirt_color = colors[1];
+    player->pants_color = colors[2];
+    player->shoe_color = colors[3];
+    Player_render(player);
 }
 
 static bool is_player_on_screen(int player_x, int player_y, int player_one_x, int player_one_y) {
@@ -244,21 +250,21 @@ void Player_render_username(Player *player) {
 }
 
 void Player_set_sprites(Player *player) {
-    uint8_t hairdo_tile = HAIRDO_VRAM_START;
-    hairdo_tile += player->hairdo * HAIRDO_TILES_PER_HAIRDO;
-    bool hairdo_flipped = false;
+    uint8_t hair_tile = HAIR_VRAM_START;
+    hair_tile += player->hair * HAIR_TILES_PER_HAIR;
+    bool hair_flipped = false;
     // down: 0, up: 2, left: 1, right: left flipped
     switch (player->direction) {
         case D_DOWN:
-            hairdo_tile += 0;
+            hair_tile += 0;
             break;
         case D_UP:
-            hairdo_tile += 2 * HAIRDO_TILES_PER_SPRITE;
+            hair_tile += 2 * HAIR_TILES_PER_SPRITE;
             break;
         case D_RIGHT:
-            hairdo_flipped = true;
+            hair_flipped = true;
         case D_LEFT:
-            hairdo_tile += 1 * HAIRDO_TILES_PER_SPRITE;
+            hair_tile += 1 * HAIR_TILES_PER_SPRITE;
             break;
         default:
             break;
@@ -266,7 +272,7 @@ void Player_set_sprites(Player *player) {
 
     uint8_t clothes_tile = CLOTHES_VRAM_START;
     bool clothes_flipped = false;
-    clothes_tile += player->clothes * CLOTHES_TILES_PER_SPRITE;
+    clothes_tile += make_clothes_sprite_offset(player->shirt, player->pants);
     switch (player->direction) {
         case D_DOWN:
             clothes_tile += 0 * CLOTHES_TILES_PER_DIRECTION;
@@ -286,15 +292,28 @@ void Player_set_sprites(Player *player) {
     }
     clothes_tile += (player->walk_frame % 2) * CLOTHES_TILES_PER_STEP;
     
-    GBC_Graphics_oam_set_sprite_tile(player->graphics, player->hairdo_sprite, hairdo_tile);
-    GBC_Graphics_oam_set_sprite_x_flip(player->graphics, player->hairdo_sprite, hairdo_flipped);
+    GBC_Graphics_oam_set_sprite_tile(player->graphics, player->hair_sprite, hair_tile);
+    GBC_Graphics_oam_set_sprite_x_flip(player->graphics, player->hair_sprite, hair_flipped);
     GBC_Graphics_oam_set_sprite_tile(player->graphics, player->clothes_sprite, clothes_tile);
     GBC_Graphics_oam_set_sprite_x_flip(player->graphics, player->clothes_sprite, clothes_flipped);
+}
+
+void Player_set_palette(Player *player) {
+    uint8_t palette[GBC_PALETTE_NUM_COLORS];
+    int colors[4];
+    colors[0] = player->hair_color;
+    colors[1] = player->shirt_color;
+    colors[2] = player->pants_color;
+    colors[3] = player->shoe_color;
+    create_player_palette(colors, palette);
+    GBC_Graphics_set_sprite_palette_array(player->graphics, player->hair_sprite, palette);
+    GBC_Graphics_set_sprite_palette_array(player->graphics, player->clothes_sprite, palette);
 }
 
 void Player_render(Player *player) {
     if (!player->active) return;
     Player_set_sprites(player);
+    Player_set_palette(player);
     if (player->number != 0) {
         int player_x_offset = player->x - player->player_one->x;
         int player_y_offset = player->y - player->player_one->y;
@@ -305,13 +324,13 @@ void Player_render(Player *player) {
             Player_hide(player);
         }
         GBC_Graphics_oam_set_sprite_pos(player->graphics, 
-            player->hairdo_sprite, 
+            player->hair_sprite, 
             PLAYER_SPRITE_SCREEN_X_OFFSET + player_x_offset,
             PLAYER_SPRITE_SCREEN_Y_OFFSET + player_y_offset - 2 * ((player->walk_frame + 1) % 2));
         GBC_Graphics_oam_set_sprite_pos(player->graphics, 
             player->clothes_sprite, 
             PLAYER_SPRITE_SCREEN_X_OFFSET + player_x_offset,
-            PLAYER_SPRITE_SCREEN_Y_OFFSET + player_y_offset + HAIRDO_HEIGHT_PIXELS - 2 * ((player->walk_frame + 1) % 2));
+            PLAYER_SPRITE_SCREEN_Y_OFFSET + player_y_offset + HAIR_HEIGHT_PIXELS - 2 * ((player->walk_frame + 1) % 2));
         Player_render_username(player);
     }
 }
@@ -351,5 +370,88 @@ void Player_take_step(Player *player) {
         default:
             break;
     }
+    Player_render(player);
+}
+
+void Player_set_hair(Player *player, int hair) {
+    player->hair = hair;
+}
+
+void Player_set_shirt(Player *player, int shirt) {
+    player->shirt = shirt;
+}
+
+void Player_set_pants(Player *player, int pants) {
+    player->pants = pants;
+}
+
+void create_player_palette(int *color_selections, uint8_t *out_palette) {
+    uint8_t colors[4];
+    out_palette[0] = COLORS_BASE;
+    out_palette[1] = COLORS_SKIN_MAJOR;
+    out_palette[2] = COLORS_SKIN_MINOR;
+    for (uint8_t i = 3; i < GBC_PALETTE_NUM_COLORS; i++) {
+        colors[0] = HAIR_PALETTES[color_selections[0]][i];
+        colors[1] = SHIRT_PALETTES[color_selections[1]][i];
+        colors[2] = PANTS_PALETTES[color_selections[2]][i];
+        colors[3] = SHOE_PALETTES[color_selections[3]][i];
+        uint8_t j;
+        bool set_color = false;
+        for (j = 0; j < 4; j++) {
+            if (colors[j] & 0b11000000) {
+                out_palette[i] = colors[j];
+                set_color = true;
+                break;
+            }
+        }
+        if (!set_color) {
+            out_palette[i] = COLORS_NULL;
+        }
+    }
+}
+
+void Player_set_hair_color(Player *player, int color) {
+    player->hair_color = color;
+}
+
+void Player_set_shirt_color(Player *player, int color) {
+    player->shirt_color = color;
+}
+
+void Player_set_pants_color(Player *player, int color) {
+    player->pants_color = color;
+}
+
+void Player_set_shoe_color(Player *player, int color) {
+    player->shoe_color = color;
+}
+
+void Player_set_outfit_colors(Player *player, int *outfit_colors) {
+    Player_set_hair_color(player, outfit_colors[0]);
+    Player_set_shirt_color(player, outfit_colors[1]);
+    Player_set_pants_color(player, outfit_colors[2]);
+    Player_set_shoe_color(player, outfit_colors[3]);
+}
+
+void Player_update_outfit(Player *player, int hair, int shirt, int pants, int *outfit_colors) {
+    Player_set_hair(player, hair);
+    Player_set_shirt(player, shirt);
+    Player_set_pants(player, pants);
+    Player_set_outfit_colors(player, outfit_colors);
+    Player_render(player);
+}
+
+void Player_next_hair(Player *player) {
+    player->hair = (player->hair + 1) % HAIR_COUNT;
+    Player_render(player);
+}
+
+void Player_next_shirt(Player *player) {
+    player->shirt = (player->shirt + 1) % CLOTHES_NUM_SHIRTS;
+    Player_render(player);
+}
+
+void Player_next_pants(Player *player) {
+    player->pants = (player->pants + 1) % CLOTHES_NUM_PANTS;
     Player_render(player);
 }

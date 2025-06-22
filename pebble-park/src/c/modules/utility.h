@@ -1,5 +1,6 @@
 #pragma once
 #include <pebble.h>
+#include "sprites/player_sprites.h"
 
 static bool do_rects_overlap(GRect rect1, GRect rect2) {
     int left_x = rect1.origin.x;
@@ -24,4 +25,8 @@ static int clamp(int low, int value, int high) {
         return high;
     }
     return value;
+}
+
+static int make_clothes_sprite_offset(int shirt, int pants) {
+    return (shirt + pants * CLOTHES_NUM_SHIRTS) * CLOTHES_TILES_PER_SPRITE;
 }

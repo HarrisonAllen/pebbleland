@@ -1,9 +1,9 @@
 #include "game.h"
-#include "palettes/sprite_palettes.h"
 #include "communication.h"
 #include "menus/main_menu.h"
 #include "windows/slide_layer.h"
 #include "sprites/player_sprites.h"
+#include "sprites/sprite_renderer.h"
 
 Game *Game_init(GBC_Graphics *graphics, Window *window, ClaySettings *settings) {
     Game *game = NULL;
@@ -48,15 +48,21 @@ void Game_destroy(Game *game) {
 
 void Game_start(Game *game) {
     // Load basic map
-    GBC_Graphics_set_bg_palette_array(game->graphics, 0, BLANK_BG_PALETTE);
+    // GBC_Graphics_set_bg_palette_array(game->graphics, 0, BLANK_BG_PALETTE);
     window_set_background_color(game->window, GColorBlack);
 
     // Load sprites
-    GBC_Graphics_load_entire_tilesheet_into_vram(game->graphics, HAIRDO_TILESHEET, HAIRDO_VRAM_START, PLAYER_VRAM);
+    GBC_Graphics_load_entire_tilesheet_into_vram(game->graphics, HAIR_TILESHEET, HAIR_VRAM_START, PLAYER_VRAM);
     GBC_Graphics_load_entire_tilesheet_into_vram(game->graphics, CLOTHES_TILESHEET, CLOTHES_VRAM_START, PLAYER_VRAM);
 
-    // TODO: load in hairdo, clothes, colors from web
-    Game_load_player(game, game->settings->Username, 0, rand()%HAIRDO_COUNT, rand()%CLOTHES_COUNT, DEFAULT_SPRITE_PALETTE);
+    // TODO: load in hair, clothes, colors from web
+    uint8_t colors[4];
+    for (uint8_t i = 0; i < 4; i++) {
+        colors[i] = rand()%NUM_COLORS;
+    }
+    Game_load_player(game, game->settings->Username, 0, 
+                     rand()%HAIR_COUNT, rand()%CLOTHES_NUM_SHIRTS, 
+                     rand()%CLOTHES_NUM_PANTS, colors);
     int player_x = 0; // ((GBC_Graphics_get_screen_width(game->graphics) / 2 - (PLAYER_SPRITE_WIDTH / 2)) / 8) * 8;
     int player_y = 0; // ((GBC_Graphics_get_screen_height(game->graphics) / 2 - (PLAYER_SPRITE_HEIGHT / 2)) / 8) * 8;
     Player_set_position(game->player_one, player_x, player_y);
@@ -64,7 +70,9 @@ void Game_start(Game *game) {
     game->in_focus = true;
 
     // Load other players
-    broadcast_connect(player_x, player_y, true);
+    if (!OFFLINE_MODE) {
+        broadcast_connect(player_x, player_y, true);
+    }
 
     // Set up background
     Background_load_resources(game->background);
@@ -98,13 +106,13 @@ int Game_get_player_by_name(Game *game, char* username) {
     return -1;
 }
 
-void Game_load_player(Game *game, char* username, int player_number, int hairdo, int clothes, uint8_t *palette_buffer) {
+void Game_load_player(Game *game, char* username, int player_number, int hair, int shirt, int pants, uint8_t *colors) {
     if (player_number == -1) {
         APP_LOG(APP_LOG_LEVEL_WARNING, "Invalid player slot %d. Cannot add user: %s", player_number, username);
     } else {
         Player *player = game->players[player_number];
         Player_set_username(player, username);
-        Player_load_sprite_and_palette(player, hairdo, clothes, palette_buffer);
+        Player_load_sprite_and_palette(player, hair, shirt, pants, colors);
         Player_activate(player);
     }
     GBC_Graphics_render(game->graphics);
@@ -135,7 +143,13 @@ void Game_add_player(Game *game, char *username, int x, int y) {
             APP_LOG(APP_LOG_LEVEL_WARNING, "Player array full! Cannot add user: %s", username);
         } else {
             // TODO: replace with sprite indices from server
-            Game_load_player(game, username, new_player_number, rand()%HAIRDO_COUNT, rand()%CLOTHES_COUNT, DEFAULT_SPRITE_PALETTE);
+            uint8_t colors[4];
+            for (uint8_t i = 0; i < 4; i++) {
+                colors[i] = rand()%NUM_COLORS;
+            }
+            Game_load_player(game, username, new_player_number, 
+                            rand()%HAIR_COUNT, rand()%CLOTHES_NUM_SHIRTS, 
+                            rand()%CLOTHES_NUM_PANTS, colors);
             Game_update_player(game, username, x, y);
 
             char connect_message[40];

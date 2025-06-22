@@ -4,6 +4,7 @@
 #include "user_menu.h"
 #include "settings_menu.h"
 #include "../windows/conf_window.h"
+#include "outfit_menu.h"
 
 void MainMenu_window_load(Window *window) {
     MainMenu *main_menu = (MainMenu *) (window_get_user_data(window));
@@ -59,10 +60,7 @@ void MainMenu_callback(int index, void *context) {
     // TODO: use game callback instead
     MainMenu *main_menu = (MainMenu *) (context);
     if (index == MENU_ITEM_INFO) {
-        char text_buffer[60];
-        snprintf(text_buffer, 60, "Player information for %s will go here", main_menu->players[0]->username);
-        TextWindow_init(text_buffer);
-        layer_mark_dirty(simple_menu_layer_get_layer(main_menu->menu_layer));
+        OutfitMenu_init(main_menu->players[0]);
     } else if (index == MENU_ITEM_SETTINGS) {
         SettingsMenu_init(main_menu->settings);
     } else if (index == MENU_ITEM_USERS) {

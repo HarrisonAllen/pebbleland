@@ -59,7 +59,7 @@
         },
         {
           "type": "raw",
-          "name": "PLAYER_HAIRDOS",
+          "name": "PLAYER_HAIRS",
           "file": "sprites/hair_tilesheet.bin"
         },
         {

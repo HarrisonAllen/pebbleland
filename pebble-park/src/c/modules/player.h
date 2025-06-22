@@ -21,12 +21,17 @@ struct _player {
     Direction direction;
     Direction tilt_direction;
     int number;
-    int hairdo_sprite;
+    int hair_sprite;
     int clothes_sprite;
     int tile_offset;
     int num_tiles;
-    int hairdo;
-    int clothes;
+    int hair;
+    int shirt;
+    int pants;
+    int hair_color;
+    int shirt_color;
+    int pants_color;
+    int shoe_color;
     uint8_t palette[GBC_PALETTE_NUM_BYTES];
     char username[USERNAME_MAX_LEN+1];
     PlayerState state;
@@ -62,9 +67,13 @@ void Player_set_position(Player *player, int x, int y);
 
 void Player_move(Player *player, int x, int y);
 
-void Player_load_sprite_and_palette(Player *player, int hairdo, int clothes, uint8_t *palette_data);
+void Player_load_sprite_and_palette(Player *player, int hair, int shirt, int pants, uint8_t *colors);
 
 void Player_render_username(Player *player);
+
+void Player_set_sprites(Player *player);
+
+void Player_set_palette(Player *player);
 
 void Player_render(Player *player);
 
@@ -77,3 +86,29 @@ void Player_rotate_counterclockwise(Player *player);
 void Player_set_tilt_direction(Player *player, Direction tilt_direction);
 
 void Player_take_step(Player *player);
+
+void Player_set_hair(Player *player, int hair);
+
+void Player_set_shirt(Player *player, int shirt);
+
+void Player_set_pants(Player *player, int pants);
+
+void create_player_palette(int *color_selections, uint8_t *out_palette);
+
+void Player_set_hair_color(Player *player, int color);
+
+void Player_set_shirt_color(Player *player, int color);
+
+void Player_set_pants_color(Player *player, int color);
+
+void Player_set_shoe_color(Player *player, int color);
+
+void Player_set_outfit_colors(Player *player, int *outfit_colors);
+
+void Player_update_outfit(Player *player, int hair, int shirt, int pants, int *outfit_colors);
+
+void Player_next_hair(Player *player);
+
+void Player_next_shirt(Player *player);
+
+void Player_next_pants(Player *player);

@@ -7,7 +7,7 @@
  * on the Pebble smartwatch, with some Game Boy Advance style modifications
  * @file pebble-gbc-graphics-advanced.h
  * @author Harrison Allen
- * @version 1.5.1 6/8/2025
+ * @version 1.5.1 6/22/2025
  * 
  * Questions? Feel free to send me an email at harrisonallen555@gmail.com
  */
@@ -43,6 +43,7 @@
  * The size of one palette, calculated by:
  * 1 byte per color * 16 colors per palette = 16 bytes
  */
+#define GBC_PALETTE_NUM_COLORS 16
 #define GBC_PALETTE_NUM_BYTES 16
 #define GBC_PALETTE_NUM_PALETTES 8 ///> The number of palettes
 /**
@@ -464,9 +465,20 @@ void GBC_Graphics_load_from_buffer_into_vram(GBC_Graphics *self, uint8_t *tile_b
  * 
  * @param self A pointer to the target GBC Graphics object
  * @param vram_bank_number The VRAM bank to return
- * @return A VRAM bank
+ * @return A pointer to the VRAM bank
  */
 uint8_t *GBC_Graphics_get_vram_bank(GBC_Graphics *self, uint8_t vram_bank_number);
+
+
+/**
+ * Returns a pointer to the requested tile
+ * 
+ * @param self A pointer to the target GBC Graphics object
+ * @param vram_bank The VRAM bank for the tile
+ * @param tile_index The tile index within the VRAM bank
+ * @return A pointer to the tile
+ */
+uint8_t *GBC_Graphics_get_tile(GBC_Graphics *self, uint8_t vram_bank, uint8_t tile_index);
 
 /**
  * Sets an arbitrary number of colors of one of the background palettes
@@ -515,6 +527,16 @@ void GBC_Graphics_copy_one_bg_palette(GBC_Graphics *self, uint8_t palette_num, u
 void GBC_Graphics_copy_all_bg_palettes(GBC_Graphics *self, uint8_t *target_array);
 
 /**
+ * Gets a pointer to a specific background palette
+ * 
+ * @param self A pointer to the target GBC Graphics object
+ * @param palette_num The palette number to get
+ * 
+ * @return A pointer to the desired palette
+ */
+uint8_t *GBC_Graphics_get_bg_palette_pointer(GBC_Graphics *self, uint8_t palette_num);
+
+/**
  * Sets an arbitrary number of colors of one of the sprite palettes
  * 
  * @param self A pointer to the target GBC Graphics object
@@ -559,6 +581,16 @@ void GBC_Graphics_copy_one_sprite_palette(GBC_Graphics *self, uint8_t palette_nu
  * @param target_array The array to copy into
  */
 void GBC_Graphics_copy_all_sprite_palettes(GBC_Graphics *self, uint8_t *target_array);
+
+/**
+ * Gets a pointer to a specific sprite palette
+ * 
+ * @param self A pointer to the target GBC Graphics object
+ * @param palette_num The palette number to get
+ * 
+ * @return A pointer to the desired palette
+ */
+uint8_t *GBC_Graphics_get_sprite_palette_pointer(GBC_Graphics *self, uint8_t palette_num);
 
 /**
  * Renders the background, window, and sprite layers at the next available opportunity
@@ -1026,14 +1058,24 @@ uint16_t GBC_Graphics_oam_get_sprite_x(GBC_Graphics *self, uint8_t sprite_num);
 uint16_t GBC_Graphics_oam_get_sprite_y(GBC_Graphics *self, uint8_t sprite_num);
 
 /**
- * Gets the tile of the sprite
+ * Gets the vram tile position of the sprite
  * 
  * @param self A pointer to the target GBC Graphics object
  * @param sprite_num The sprite's position in OAM
  * 
- * @return The sprite's tile
+ * @return The sprite's vram tile position
  */
-uint8_t GBC_Graphics_oam_get_sprite_tile(GBC_Graphics *self, uint8_t sprite_num);
+uint8_t GBC_Graphics_oam_get_sprite_tile_pos(GBC_Graphics *self, uint8_t sprite_num);
+
+/**
+ * Gets a pointer to the tile of the sprite
+ * 
+ * @param self A pointer to the target GBC Graphics object
+ * @param sprite_num The sprite's position in OAM
+ * 
+ * @return A pointer to the sprite's tile in vram
+ */
+uint8_t *GBC_Graphics_oam_get_sprite_tile(GBC_Graphics *self, uint8_t sprite_num);
 
 /**
  * Gets the attributes of the sprite
