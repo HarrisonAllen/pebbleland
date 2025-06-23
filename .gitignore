@@ -4,3 +4,4 @@ node_modules/
 database/
 __pycache__/
 .DS_Store
+graphics/sprites/

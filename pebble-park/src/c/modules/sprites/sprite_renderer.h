@@ -6,6 +6,13 @@
 
 static bool s_debug = true;
 
+uint8_t BW_COLOR_MAPPING[] = {
+    0b11000000, // 0b00 - black
+    0b11010101, // 0b01 - unused, dark gray
+    0b11101010, // 0b10 - gray
+    0b11111111, // 0b11 - white
+};
+
 static void draw_rect(GContext *ctx, GRect rect, GColor color) {
     graphics_context_set_stroke_color(ctx, color);
     graphics_context_set_fill_color(ctx, color);
@@ -27,7 +34,11 @@ static void render_tile(GContext *ctx, uint8_t *tile, uint8_t *palette, uint8_t 
             shift = (1 ^ (x & 1)) << 2; // (1 - pixel_x % 2) * 4
             pixel = 0b1111 & (pixel_byte >> shift);
             if (pixel != 0) {
+            #if defined(PBL_COLOR)
                 color = (GColor){.argb=palette[pixel]};
+            #else
+                color = (GColor){.argb=BW_COLOR_MAPPING[palette[pixel]]};
+            #endif // if defined (PBL_COLOR)
                 pixel_bounds = GRect(start.x + x*pixel_size, start.y + y*pixel_size, pixel_size, pixel_size);
                 draw_rect(ctx, pixel_bounds, color);
             }

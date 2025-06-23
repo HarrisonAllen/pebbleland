@@ -3,7 +3,6 @@
 #include "menus/main_menu.h"
 #include "windows/slide_layer.h"
 #include "sprites/player_sprites.h"
-#include "sprites/sprite_renderer.h"
 
 Game *Game_init(GBC_Graphics *graphics, Window *window, ClaySettings *settings) {
     Game *game = NULL;

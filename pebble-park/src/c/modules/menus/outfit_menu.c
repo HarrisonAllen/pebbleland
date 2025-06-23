@@ -2,6 +2,7 @@
 #include "../defines.h"
 #include "../sprites/sprite_renderer.h"
 #include "../utility.h"
+#include "outfit_sub_menu.h"
 
 void OutfitMenu_window_load(Window *window) {
     OutfitMenu *outfit_menu = (OutfitMenu *) (window_get_user_data(window));
@@ -53,33 +54,93 @@ void OutfitMenu_destroy(OutfitMenu *outfit_menu) {
     }
 }
 
+void OutfitMenu_hair_callback(int index, void *ctx) {
+    OutfitMenu *outfit_menu = (OutfitMenu *) (ctx);
+    if (index == SUB_MENU_ITEM_STYLE) {
+        outfit_menu->hair = (outfit_menu->hair + 1) % HAIR_COUNT;
+    } else if (index == SUB_MENU_ITEM_COLOR) {
+        outfit_menu->colors[0] = (outfit_menu->colors[0] + 1) % NUM_COLORS;
+    }
+    layer_mark_dirty(outfit_menu->sprite_layer);
+}
+
+void OutfitMenu_shirt_callback(int index, void *ctx) {
+    OutfitMenu *outfit_menu = (OutfitMenu *) (ctx);
+    if (index == SUB_MENU_ITEM_STYLE) {
+        outfit_menu->shirt = (outfit_menu->shirt + 1) % CLOTHES_NUM_SHIRTS;
+    } else if (index == SUB_MENU_ITEM_COLOR) {
+        outfit_menu->colors[1] = (outfit_menu->colors[1] + 1) % NUM_COLORS;
+    }
+    layer_mark_dirty(outfit_menu->sprite_layer);
+}
+
+void OutfitMenu_pants_callback(int index, void *ctx) {
+    OutfitMenu *outfit_menu = (OutfitMenu *) (ctx);
+    if (index == SUB_MENU_ITEM_STYLE) {
+        outfit_menu->pants = (outfit_menu->pants + 1) % CLOTHES_NUM_PANTS;
+    } else if (index == SUB_MENU_ITEM_COLOR) {
+        outfit_menu->colors[2] = (outfit_menu->colors[2] + 1) % NUM_COLORS;
+    }
+    layer_mark_dirty(outfit_menu->sprite_layer);
+}
+
+void OutfitMenu_shoe_callback(int index, void *ctx) {
+    OutfitMenu *outfit_menu = (OutfitMenu *) (ctx);
+    if (index == SUB_MENU_ITEM_STYLE) {
+        // No shoe styles
+    } else if (index == SUB_MENU_ITEM_COLOR) {
+        outfit_menu->colors[3] = (outfit_menu->colors[3] + 1) % NUM_COLORS;
+    }
+    layer_mark_dirty(outfit_menu->sprite_layer);
+}
+
+void OutfitMenu_reshow_callback(void *context) {
+    OutfitMenu *outfit_menu = (OutfitMenu *) (context);
+    text_layer_set_text(outfit_menu->text_layer, "Outfit Customization");
+    layer_add_child(window_get_root_layer(outfit_menu->window), outfit_menu->sprite_layer);
+    layer_add_child(window_get_root_layer(outfit_menu->window), text_layer_get_layer(outfit_menu->text_layer));
+}
+
 void OutfitMenu_callback(int index, void *ctx) {
     OutfitMenu *outfit_menu = (OutfitMenu *) (ctx);
+#if defined(PBL_COLOR)
     if (index == MENU_ITEM_HAIR) {
-        outfit_menu->hair = (outfit_menu->hair + 1) % HAIR_COUNT;
-        outfit_menu->colors[0] = (outfit_menu->colors[0] + 1) % NUM_COLORS;
-        layer_mark_dirty(outfit_menu->sprite_layer);
+        text_layer_set_text(outfit_menu->text_layer, "Hair Customization");
+        OutfitSubMenu_init(OutfitMenu_hair_callback, OutfitMenu_reshow_callback, (void *) outfit_menu, outfit_menu->sprite_layer, outfit_menu->text_layer);
         APP_LOG(APP_LOG_LEVEL_DEBUG, "Hair select");
     }
     if (index == MENU_ITEM_SHIRT) {
-        outfit_menu->shirt = (outfit_menu->shirt + 1) % CLOTHES_NUM_SHIRTS;
-        outfit_menu->colors[1] = (outfit_menu->colors[1] + 1) % NUM_COLORS;
-        layer_mark_dirty(outfit_menu->sprite_layer);
+        text_layer_set_text(outfit_menu->text_layer, "Shirt Customization");
+        OutfitSubMenu_init(OutfitMenu_shirt_callback, OutfitMenu_reshow_callback, (void *) outfit_menu, outfit_menu->sprite_layer, outfit_menu->text_layer);
         APP_LOG(APP_LOG_LEVEL_DEBUG, "Shirt select");
     }
     if (index == MENU_ITEM_PANTS) {
-        outfit_menu->pants = (outfit_menu->pants + 1) % CLOTHES_NUM_PANTS;
-        outfit_menu->colors[2] = (outfit_menu->colors[2] + 1) % NUM_COLORS;
-        layer_mark_dirty(outfit_menu->sprite_layer);
+        text_layer_set_text(outfit_menu->text_layer, "Pants Customization");
+        OutfitSubMenu_init(OutfitMenu_pants_callback, OutfitMenu_reshow_callback, (void *) outfit_menu, outfit_menu->sprite_layer, outfit_menu->text_layer);
         APP_LOG(APP_LOG_LEVEL_DEBUG, "Pants select");
         // final shirt pants style is (shirt_style + pants_style * CLOTHES_NUM_SHIRTS)
     }
     if (index == MENU_ITEM_SHOES) {
-        outfit_menu->colors[3] = (outfit_menu->colors[3] + 1) % NUM_COLORS;
-        layer_mark_dirty(outfit_menu->sprite_layer);
+        text_layer_set_text(outfit_menu->text_layer, "Shoe Customization");
+        OutfitSubMenu_init(OutfitMenu_shoe_callback, OutfitMenu_reshow_callback, (void *) outfit_menu, outfit_menu->sprite_layer, outfit_menu->text_layer);
         APP_LOG(APP_LOG_LEVEL_DEBUG, "Shoes select");
         // Only do color
     }
+#else
+    if (index == MENU_ITEM_HAIR) {
+        OutfitMenu_hair_callback(SUB_MENU_ITEM_STYLE, ctx);
+    }
+    if (index == MENU_ITEM_SHIRT) {
+        OutfitMenu_shirt_callback(SUB_MENU_ITEM_STYLE, ctx);
+    }
+    if (index == MENU_ITEM_PANTS) {
+        OutfitMenu_pants_callback(SUB_MENU_ITEM_STYLE, ctx);
+    }
+    if (index == MENU_ITEM_SHOES) {
+        OutfitMenu_shoe_callback(SUB_MENU_ITEM_STYLE, ctx);
+    }
+
+#endif // if defined(PBL_COLOR)
     if (index == MENU_ITEM_SAVE_OUTFIT) {
         APP_LOG(APP_LOG_LEVEL_DEBUG, "Save outfit");
         Player_update_outfit(outfit_menu->player, outfit_menu->hair, outfit_menu->shirt, outfit_menu->pants, outfit_menu->colors);

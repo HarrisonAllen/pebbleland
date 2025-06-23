@@ -387,10 +387,7 @@ void Player_set_pants(Player *player, int pants) {
 
 void create_player_palette(int *color_selections, uint8_t *out_palette) {
     uint8_t colors[4];
-    out_palette[0] = COLORS_BASE;
-    out_palette[1] = COLORS_SKIN_MAJOR;
-    out_palette[2] = COLORS_SKIN_MINOR;
-    for (uint8_t i = 3; i < GBC_PALETTE_NUM_COLORS; i++) {
+    for (uint8_t i = 0; i < GBC_PALETTE_NUM_COLORS; i++) {
         colors[0] = HAIR_PALETTES[color_selections[0]][i];
         colors[1] = SHIRT_PALETTES[color_selections[1]][i];
         colors[2] = PANTS_PALETTES[color_selections[2]][i];
@@ -398,7 +395,11 @@ void create_player_palette(int *color_selections, uint8_t *out_palette) {
         uint8_t j;
         bool set_color = false;
         for (j = 0; j < 4; j++) {
+        #if defined(PBL_COLOR)
             if (colors[j] & 0b11000000) {
+        #else
+            if (colors[j] != COLORS_NULL) {
+        #endif // if defined(PBL_COLOR)
                 out_palette[i] = colors[j];
                 set_color = true;
                 break;
