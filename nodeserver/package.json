@@ -1,9 +1,15 @@
 {
     "name": "web-server",  
-    "main": "app.js",
+    "main": "src/app.ts",
     "type": "commmoduleonjs",
     "dependencies": {
         "ws": "^8.18.0",
-        "sqlite3": "^5.1.7"
+        "sqlite3": "^5.1.7",
+        "typescript": "^5.8.3",
+        "@types/node": "^24.0.7"
+    },
+    "scripts": {
+        "build": "rimraf ./dist && tsc",
+        "start": "npm run build && node dist/app.js"
     }
 }
