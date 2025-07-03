@@ -35,7 +35,6 @@ static void start_game() {
   Game_start(s_game);
   text_layer_set_text(s_sub_text_layer, "");
   text_layer_set_text(s_main_text_layer, "");
-  // TODO: request current users
   app_timer_register(FRAME_DURATION, frame_timer_handle, NULL); 
   s_state = S_PLAY;
 }
@@ -88,32 +87,78 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
     Tuple *user_connected_t = dict_find(iterator, MESSAGE_KEY_UserConnected);
     if (user_connected_t) {
       Tuple *username_t = dict_find(iterator, MESSAGE_KEY_Username);
-      Tuple *player_x_t = dict_find(iterator, MESSAGE_KEY_PlayerX);
-      Tuple *player_y_t = dict_find(iterator, MESSAGE_KEY_PlayerY);
-      if (username_t && player_x_t && player_y_t) {
-        Game_add_player(s_game, 
-                        username_t->value->cstring,
-                        player_x_t->value->int16,
-                        player_y_t->value->int16);
-      }
+      Tuple *x_t = dict_find(iterator, MESSAGE_KEY_X);
+      Tuple *y_t = dict_find(iterator, MESSAGE_KEY_Y);
+      Tuple *dir_t = dict_find(iterator, MESSAGE_KEY_Dir);
+      Tuple *hair_style_t = dict_find(iterator, MESSAGE_KEY_HairStyle);
+      Tuple *shirt_style_t = dict_find(iterator, MESSAGE_KEY_ShirtStyle);
+      Tuple *pants_style_t = dict_find(iterator, MESSAGE_KEY_PantsStyle);
+      Tuple *hair_color_t = dict_find(iterator, MESSAGE_KEY_HairColor);
+      Tuple *shirt_color_t = dict_find(iterator, MESSAGE_KEY_ShirtColor);
+      Tuple *pants_color_t = dict_find(iterator, MESSAGE_KEY_PantsColor);
+      Tuple *shoes_color_t = dict_find(iterator, MESSAGE_KEY_ShoesColor);
+      PlayerData player_data = {
+        // .username = username_t->value->cstring,
+        .x = x_t->value->int16,
+        .y = y_t->value->int16,
+        .dir = dir_t->value->uint8,
+        .hair_style = hair_style_t->value->uint8,
+        .shirt_style = shirt_style_t->value->uint8,
+        .pants_style = pants_style_t->value->uint8,
+        .hair_color = hair_color_t->value->uint8,
+        .shirt_color = shirt_color_t->value->uint8,
+        .pants_color = pants_color_t->value->uint8,
+        .shoes_color = shoes_color_t->value->uint8,
+      };
+      strcpy(player_data.username, username_t->value->cstring);
+      Game_add_player(s_game, player_data);
     }
 
-    // add location handler
     Tuple *user_location_t = dict_find(iterator, MESSAGE_KEY_Location);
     if (user_location_t) {
       Tuple *username_t = dict_find(iterator, MESSAGE_KEY_Username);
-      Tuple *player_x_t = dict_find(iterator, MESSAGE_KEY_PlayerX);
-      Tuple *player_y_t = dict_find(iterator, MESSAGE_KEY_PlayerY);
-      if (username_t && player_x_t && player_y_t) {
-        Game_update_player(s_game, 
+      Tuple *x_t = dict_find(iterator, MESSAGE_KEY_X);
+      Tuple *y_t = dict_find(iterator, MESSAGE_KEY_Y);
+      Tuple *dir_t = dict_find(iterator, MESSAGE_KEY_Dir);
+      if (username_t && x_t && y_t && dir_t) {
+        Game_set_player_position(s_game, 
                            username_t->value->cstring,
-                           player_x_t->value->int16,
-                           player_y_t->value->int16);
+                           x_t->value->int16,
+                           y_t->value->int16,
+                           dir_t->value->uint8);
       }
     }
 
+    
+    Tuple *user_updated_t = dict_find(iterator, MESSAGE_KEY_Update);
+    if (user_updated_t) {
+      Tuple *username_t = dict_find(iterator, MESSAGE_KEY_Username);
+      Tuple *x_t = dict_find(iterator, MESSAGE_KEY_X);
+      Tuple *y_t = dict_find(iterator, MESSAGE_KEY_Y);
+      Tuple *dir_t = dict_find(iterator, MESSAGE_KEY_Dir);
+      Tuple *hair_style_t = dict_find(iterator, MESSAGE_KEY_HairStyle);
+      Tuple *shirt_style_t = dict_find(iterator, MESSAGE_KEY_ShirtStyle);
+      Tuple *pants_style_t = dict_find(iterator, MESSAGE_KEY_PantsStyle);
+      Tuple *hair_color_t = dict_find(iterator, MESSAGE_KEY_HairColor);
+      Tuple *shirt_color_t = dict_find(iterator, MESSAGE_KEY_ShirtColor);
+      Tuple *pants_color_t = dict_find(iterator, MESSAGE_KEY_PantsColor);
+      Tuple *shoes_color_t = dict_find(iterator, MESSAGE_KEY_ShoesColor);
+      PlayerData player_data = {
+        .x = x_t->value->int16,
+        .y = y_t->value->int16,
+        .dir = dir_t->value->uint8,
+        .hair_style = hair_style_t->value->uint8,
+        .shirt_style = shirt_style_t->value->uint8,
+        .pants_style = pants_style_t->value->uint8,
+        .hair_color = hair_color_t->value->uint8,
+        .shirt_color = shirt_color_t->value->uint8,
+        .pants_color = pants_color_t->value->uint8,
+        .shoes_color = shoes_color_t->value->uint8,
+      };
+      strcpy(player_data.username, username_t->value->cstring);
+      Game_update_player(s_game, player_data);
+    }
 
-    // ad disconnect handler
     Tuple *user_disconnected_t = dict_find(iterator, MESSAGE_KEY_UserDisconnected);
     if (user_disconnected_t) {
       Tuple *username_t = dict_find(iterator, MESSAGE_KEY_Username);

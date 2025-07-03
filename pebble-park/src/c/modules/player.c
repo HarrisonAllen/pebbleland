@@ -17,7 +17,7 @@ Player *Player_initialize(int number, GBC_Graphics *graphics, Background *backgr
     player->active = false;
     player->hair_sprite = MAX_PLAYERS * 2 - (player->number + 1) * 2;
     player->clothes_sprite = MAX_PLAYERS * 2 - (player->number + 1) * 2 + 1;
-    player->direction = D_DOWN;
+    player->data.dir = D_DOWN;
     // player->tile_offset =  player->number * OUTFIT_TILES;
     player->num_tiles = OUTFIT_TILES;
     if (player->number == 0) {
@@ -41,6 +41,10 @@ void Player_destroy(Player *player) {
     }
 }
 
+void Player_load_data(Player *player, PlayerData data) {
+    player->data = data;
+}
+
 void Player_push_input(Player *player, QueuedInput input) {
     if (input == Q_SELECT_PRESS) {
         player->select_pressed = true;
@@ -54,13 +58,22 @@ void Player_push_input(Player *player, QueuedInput input) {
 void Player_pop_input(Player *player) {
     if (player->settings->Tilt) {
         Player_set_direction(player, player->tilt_direction);
+        if (!OFFLINE_MODE) {
+            broadcast_position(player->data.x, player->data.y, player->data.dir);
+        }
     }
     if (player->queued_input == Q_UP) {
         Player_rotate_counterclockwise(player);
+        if (!OFFLINE_MODE) {
+            broadcast_position(player->data.x, player->data.y, player->data.dir);
+        }
         player->queued_input = Q_NONE;
     } 
     if (player->queued_input == Q_DOWN) {
         Player_rotate_clockwise(player);
+        if (!OFFLINE_MODE) {
+            broadcast_position(player->data.x, player->data.y, player->data.dir);
+        }
         player->queued_input = Q_NONE;
     }
     if (player->queued_input == Q_SELECT) {
@@ -73,7 +86,7 @@ void Player_pop_input(Player *player) {
                 // Mid step? Double click -> autowalk
                 player->walk_state = W_WALK;
                 if (player->number == 0) {
-                    Background_load_tiles_in_direction(player->background, player->direction, player->x, player->y);
+                    Background_load_tiles_in_direction(player->background, player->data.dir, player->data.x, player->data.y);
                 }
             }
         } else if (player->state == P_STAND) {
@@ -85,7 +98,7 @@ void Player_pop_input(Player *player) {
             player->walk_state = W_STEP;
             player->walk_frame = 0;
             if (player->number == 0) {
-                Background_load_tiles_in_direction(player->background, player->direction, player->x, player->y);
+                Background_load_tiles_in_direction(player->background, player->data.dir, player->data.x, player->data.y);
             }
         }
     } else if (player->queued_input == Q_NONE) {
@@ -96,7 +109,7 @@ void Player_pop_input(Player *player) {
                 player->walk_state = W_STAND;
             } else {
                 if (player->number == 0) {
-                    Background_load_tiles_in_direction(player->background, player->direction, player->x, player->y);
+                    Background_load_tiles_in_direction(player->background, player->data.dir, player->data.x, player->data.y);
                 }
             }
         }
@@ -114,7 +127,7 @@ void Player_step(Player *player) {
         if (player->walk_frame == 0) {
             Player_pop_input(player);
             if (!OFFLINE_MODE) {
-                broadcast_position(player->x, player->y);
+                broadcast_position(player->data.x, player->data.y, player->data.dir);
             }
         }
     }
@@ -125,14 +138,12 @@ void Player_hide(Player *player) {
     GBC_Graphics_oam_set_sprite_hidden(player->graphics, player->hair_sprite, true);
     GBC_Graphics_oam_set_sprite_hidden(player->graphics, player->clothes_sprite, true);
     layer_set_hidden(text_layer_get_layer(player->text_layer), true);
-    Player_render(player);
 }
 
 void Player_show(Player *player) {
     GBC_Graphics_oam_set_sprite_hidden(player->graphics, player->hair_sprite, false);
     GBC_Graphics_oam_set_sprite_hidden(player->graphics, player->clothes_sprite, false);
     layer_set_hidden(text_layer_get_layer(player->text_layer), false);
-    Player_render(player);
 }
 
 void Player_deactivate(Player *player) {
@@ -150,8 +161,8 @@ void Player_set_up_username_text(Player *player) {
     GFont font = fonts_get_system_font(PLAYER_FONT);
     
     // Find the bounds of the scrolling text
-    GRect text_max_bounds = GRect(bounds.origin.x, bounds.origin.y, bounds.size.w, bounds.size.h); // TODO: could optimize this
-    GSize text_size = graphics_text_layout_get_content_size(player->username, font, 
+    GRect text_max_bounds = GRect(bounds.origin.x, bounds.origin.y, bounds.size.w, bounds.size.h);
+    GSize text_size = graphics_text_layout_get_content_size(player->data.username, font, 
                     text_max_bounds, GTextOverflowModeWordWrap, GTextAlignmentCenter);
     GRect text_bounds = GRect(0, 0, text_size.w, text_size.h + 4); // TODO: get rid of this magic number to prevent text cutoff (aka text box too small)
     
@@ -159,7 +170,7 @@ void Player_set_up_username_text(Player *player) {
     player->text_layer = text_layer_create(text_bounds);
     text_layer_set_overflow_mode(player->text_layer, GTextOverflowModeWordWrap);
     text_layer_set_font(player->text_layer, font);
-    text_layer_set_text(player->text_layer, player->username);
+    text_layer_set_text(player->text_layer, player->data.username);
     text_layer_set_background_color(player->text_layer, GColorWhite);
     layer_insert_above_sibling(text_layer_get_layer(player->text_layer), player->graphics->graphics_layer);
     Player_render_username(player);
@@ -169,32 +180,40 @@ void Player_activate(Player *player) {
     player->active = true;
     Player_set_up_username_text(player);
     Player_show(player);
+    Player_render(player);
 }
 
 void Player_set_username(Player *player, char *username) {
-    strcpy(player->username, username);
+    strcpy(player->data.username, username);
 }
 
-void Player_set_position(Player *player, int x, int y) {
+void Player_set_position(Player *player, int x, int y, Direction dir) {
     x = clamp(PLAYER_MIN_X, x, PLAYER_MAX_X);
     y = clamp(PLAYER_MIN_Y, y, PLAYER_MAX_Y);
     if (player->number == 0) {
         GBC_Graphics_oam_set_sprite_pos(player->graphics, 
                                     player->hair_sprite, 
                                     PLAYER_SPRITE_SCREEN_X_OFFSET,
-                                    PLAYER_SPRITE_SCREEN_Y_OFFSET - 2 * ((player->walk_frame + 1) % 2));
+                                    PLAYER_SPRITE_SCREEN_Y_OFFSET - 2 * ((player->walk_frame + 1) % 2) * (player->state == P_WALK));
         GBC_Graphics_oam_set_sprite_pos(player->graphics, 
                                     player->clothes_sprite, 
                                     PLAYER_SPRITE_SCREEN_X_OFFSET,
-                                    PLAYER_SPRITE_SCREEN_Y_OFFSET + HAIR_HEIGHT_PIXELS - 2 * ((player->walk_frame + 1) % 2));
-        Background_move(player->background, x - player->x, y - player->y);
+                                    PLAYER_SPRITE_SCREEN_Y_OFFSET + HAIR_HEIGHT_PIXELS - 2 * ((player->walk_frame + 1) % 2) * (player->state == P_WALK));
+        Background_move(player->background, x - player->data.x, y - player->data.y);
     }
-    player->x = x;
-    player->y = y;
+    player->data.x = x;
+    player->data.y = y;
+    player->data.dir = dir;
+    Player_render(player);
 }
 
-void Player_move(Player *player, int x, int y) {
-    Player_set_position(player, player->x + x, player->y + y);
+void Player_update(Player *player, PlayerData player_data) {
+    player->data = player_data;
+    Player_render(player);
+}
+
+void Player_move(Player *player, int x, int y, Direction dir) {
+    Player_set_position(player, player->data.x + x, player->data.y + y, dir);
 }
 
 GPoint Player_get_screen_position(Player *player) {
@@ -209,17 +228,6 @@ GPoint Player_get_screen_position(Player *player) {
     return GPoint(x, y);
 }
 
-void Player_load_sprite_and_palette(Player *player, int hair, int shirt, int pants, uint8_t *colors) {
-    player->hair = hair;
-    player->shirt = shirt;
-    player->pants = pants;
-    player->hair_color = colors[0];
-    player->shirt_color = colors[1];
-    player->pants_color = colors[2];
-    player->shoe_color = colors[3];
-    Player_render(player);
-}
-
 static bool is_player_on_screen(int player_x, int player_y, int player_one_x, int player_one_y) {
     int player_x_offset = player_x - player_one_x;
     int player_y_offset = player_y - player_one_y;
@@ -232,7 +240,7 @@ static bool is_player_on_screen(int player_x, int player_y, int player_one_x, in
 void Player_render_username(Player *player) {
     if (player->text_layer == NULL) return;
     Layer *layer = text_layer_get_layer(player->text_layer);
-    bool on_screen = is_player_on_screen(player->x, player->y, player->player_one->x, player->player_one->y);
+    bool on_screen = is_player_on_screen(player->data.x, player->data.y, player->player_one->data.x, player->player_one->data.y);
     if (player->number == 0 || !on_screen) {
         layer_set_hidden(layer, true);
     } else {
@@ -251,10 +259,10 @@ void Player_render_username(Player *player) {
 
 void Player_set_sprites(Player *player) {
     uint8_t hair_tile = HAIR_VRAM_START;
-    hair_tile += player->hair * HAIR_TILES_PER_HAIR;
+    hair_tile += player->data.hair_style * HAIR_TILES_PER_HAIR;
     bool hair_flipped = false;
     // down: 0, up: 2, left: 1, right: left flipped
-    switch (player->direction) {
+    switch (player->data.dir) {
         case D_DOWN:
             hair_tile += 0;
             break;
@@ -272,8 +280,8 @@ void Player_set_sprites(Player *player) {
 
     uint8_t clothes_tile = CLOTHES_VRAM_START;
     bool clothes_flipped = false;
-    clothes_tile += make_clothes_sprite_offset(player->shirt, player->pants);
-    switch (player->direction) {
+    clothes_tile += make_clothes_sprite_offset(player->data.shirt_style, player->data.pants_style);
+    switch (player->data.dir) {
         case D_DOWN:
             clothes_tile += 0 * CLOTHES_TILES_PER_DIRECTION;
             clothes_flipped = player->walk_frame == 3;
@@ -301,23 +309,24 @@ void Player_set_sprites(Player *player) {
 void Player_set_palette(Player *player) {
     uint8_t palette[GBC_PALETTE_NUM_COLORS];
     int colors[4];
-    colors[0] = player->hair_color;
-    colors[1] = player->shirt_color;
-    colors[2] = player->pants_color;
-    colors[3] = player->shoe_color;
+    colors[0] = player->data.hair_color;
+    colors[1] = player->data.shirt_color;
+    colors[2] = player->data.pants_color;
+    colors[3] = player->data.shoes_color;
     create_player_palette(colors, palette);
     GBC_Graphics_set_sprite_palette_array(player->graphics, player->hair_sprite, palette);
     GBC_Graphics_set_sprite_palette_array(player->graphics, player->clothes_sprite, palette);
 }
 
 void Player_render(Player *player) {
+    // TODO: fix player positions, something got funky
     if (!player->active) return;
     Player_set_sprites(player);
     Player_set_palette(player);
     if (player->number != 0) {
-        int player_x_offset = player->x - player->player_one->x;
-        int player_y_offset = player->y - player->player_one->y;
-        bool on_screen = is_player_on_screen(player->x, player->y, player->player_one->x, player->player_one->y);
+        int player_x_offset = player->data.x - player->player_one->data.x;
+        int player_y_offset = player->data.y - player->player_one->data.y;
+        bool on_screen = is_player_on_screen(player->data.x, player->data.y, player->player_one->data.x, player->player_one->data.y);
         if (on_screen) {
             Player_show(player);
         } else {
@@ -326,27 +335,29 @@ void Player_render(Player *player) {
         GBC_Graphics_oam_set_sprite_pos(player->graphics, 
             player->hair_sprite, 
             PLAYER_SPRITE_SCREEN_X_OFFSET + player_x_offset,
-            PLAYER_SPRITE_SCREEN_Y_OFFSET + player_y_offset - 2 * ((player->walk_frame + 1) % 2));
+            PLAYER_SPRITE_SCREEN_Y_OFFSET + player_y_offset);
+            // PLAYER_SPRITE_SCREEN_Y_OFFSET + player_y_offset - 2 * ((player->walk_frame + 1) % 2));
         GBC_Graphics_oam_set_sprite_pos(player->graphics, 
             player->clothes_sprite, 
             PLAYER_SPRITE_SCREEN_X_OFFSET + player_x_offset,
-            PLAYER_SPRITE_SCREEN_Y_OFFSET + player_y_offset + HAIR_HEIGHT_PIXELS - 2 * ((player->walk_frame + 1) % 2));
+            PLAYER_SPRITE_SCREEN_Y_OFFSET + player_y_offset + HAIR_HEIGHT_PIXELS);
+            // PLAYER_SPRITE_SCREEN_Y_OFFSET + player_y_offset + HAIR_HEIGHT_PIXELS - 2 * ((player->walk_frame + 1) % 2));
         Player_render_username(player);
     }
 }
 
 void Player_set_direction(Player *player, Direction direction) {
     if (direction != D_MAX) {
-        player->direction = direction;
+        player->data.dir = direction;
     }
 }
 
 void Player_rotate_clockwise(Player *player) {
-    Player_set_direction(player, (player->direction + 1 + D_MAX) % D_MAX);
+    Player_set_direction(player, (player->data.dir + 1 + D_MAX) % D_MAX);
 }
 
 void Player_rotate_counterclockwise(Player *player) {
-    Player_set_direction(player, (player->direction - 1 + D_MAX) % D_MAX); // The + D_MAX is to avoid negative mod
+    Player_set_direction(player, (player->data.dir - 1 + D_MAX) % D_MAX); // The + D_MAX is to avoid negative mod
 }
 
 void Player_set_tilt_direction(Player *player, Direction tilt_direction) {
@@ -354,18 +365,18 @@ void Player_set_tilt_direction(Player *player, Direction tilt_direction) {
 }
 
 void Player_take_step(Player *player) {
-    switch (player->direction) {
+    switch (player->data.dir) {
         case D_UP:
-            Player_move(player, 0, -PLAYER_SUB_STEP_SIZE);
+            Player_move(player, 0, -PLAYER_SUB_STEP_SIZE, player->data.dir);
             break;
         case D_DOWN:
-            Player_move(player, 0, PLAYER_SUB_STEP_SIZE);
+            Player_move(player, 0, PLAYER_SUB_STEP_SIZE, player->data.dir);
             break;
         case D_LEFT:
-            Player_move(player, -PLAYER_SUB_STEP_SIZE, 0);
+            Player_move(player, -PLAYER_SUB_STEP_SIZE, 0, player->data.dir);
             break;
         case D_RIGHT:
-            Player_move(player, PLAYER_SUB_STEP_SIZE, 0);
+            Player_move(player, PLAYER_SUB_STEP_SIZE, 0, player->data.dir);
             break;
         default:
             break;
@@ -374,15 +385,15 @@ void Player_take_step(Player *player) {
 }
 
 void Player_set_hair(Player *player, int hair) {
-    player->hair = hair;
+    player->data.hair_style = hair;
 }
 
 void Player_set_shirt(Player *player, int shirt) {
-    player->shirt = shirt;
+    player->data.shirt_style = shirt;
 }
 
 void Player_set_pants(Player *player, int pants) {
-    player->pants = pants;
+    player->data.pants_style = pants;
 }
 
 void create_player_palette(int *color_selections, uint8_t *out_palette) {
@@ -412,19 +423,19 @@ void create_player_palette(int *color_selections, uint8_t *out_palette) {
 }
 
 void Player_set_hair_color(Player *player, int color) {
-    player->hair_color = color;
+    player->data.hair_color = color;
 }
 
 void Player_set_shirt_color(Player *player, int color) {
-    player->shirt_color = color;
+    player->data.shirt_color = color;
 }
 
 void Player_set_pants_color(Player *player, int color) {
-    player->pants_color = color;
+    player->data.pants_color = color;
 }
 
 void Player_set_shoe_color(Player *player, int color) {
-    player->shoe_color = color;
+    player->data.shoes_color = color;
 }
 
 void Player_set_outfit_colors(Player *player, int *outfit_colors) {
@@ -439,20 +450,21 @@ void Player_update_outfit(Player *player, int hair, int shirt, int pants, int *o
     Player_set_shirt(player, shirt);
     Player_set_pants(player, pants);
     Player_set_outfit_colors(player, outfit_colors);
+    broadcast_update(player->data);
     Player_render(player);
 }
 
 void Player_next_hair(Player *player) {
-    player->hair = (player->hair + 1) % HAIR_COUNT;
+    player->data.hair_style = (player->data.hair_style + 1) % HAIR_COUNT;
     Player_render(player);
 }
 
 void Player_next_shirt(Player *player) {
-    player->shirt = (player->shirt + 1) % CLOTHES_NUM_SHIRTS;
+    player->data.shirt_style = (player->data.shirt_style + 1) % CLOTHES_NUM_SHIRTS;
     Player_render(player);
 }
 
 void Player_next_pants(Player *player) {
-    player->pants = (player->pants + 1) % CLOTHES_NUM_PANTS;
+    player->data.pants_style = (player->data.pants_style + 1) % CLOTHES_NUM_PANTS;
     Player_render(player);
 }

@@ -75,7 +75,7 @@ void MainMenu_callback(int index, void *context) {
 }
 
 void MainMenu_open_menu(MainMenu *main_menu) {
-    main_menu->user_menu_item = UserMenuItem_create(main_menu->players[0]->username, -1, MainMenu_callback);
+    main_menu->user_menu_item = UserMenuItem_create(main_menu->players[0]->data.username, -1, MainMenu_callback);
     main_menu->menu_items[MENU_ITEM_INFO] = main_menu->user_menu_item->menu_item;
     main_menu->menu_items[MENU_ITEM_SETTINGS] = (SimpleMenuItem) {
         .title = "Settings",

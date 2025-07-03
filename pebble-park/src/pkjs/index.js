@@ -63,10 +63,13 @@ function send_to_server(dictionary) {
 function login(username) {
     var login_info = {
         'request': 'login',
-        'watch_token': Pebble.getAccountToken(),
-        'account_token': Pebble.getWatchToken(),
-        'username': username,
+        'account_token': Pebble.getAccountToken(),
+        // 'watch_token': Pebble.getWatchToken(),
+        // 'username': username,
         // 'username': 'Basalt',
+        // 'watch_token': '0'
+        'username': 'Diorite',
+        'watch_token': '1'
     };
 
     send_to_server(login_info);
@@ -80,20 +83,46 @@ function click(button) {
     send_to_server(click_info);
 }
 
-function broadcast_location(x, y) {
+function broadcast_location(x, y, dir) {
     var location_info = {
         'request': 'location',
         'x': x,
-        'y': y
+        'y': y,
+        'dir': dir,
     };
     send_to_server(location_info);
 }
 
-function broadcast_connect(x, y) {
+function broadcast_update(dict) { // This is where I left off
+    var connect_info = {
+        'request': 'update',
+        "x": dict["X"],
+        "y": dict["Y"],
+        "dir": dict["Dir"],
+        "hair_style": dict["HairStyle"],
+        "shirt_style": dict["ShirtStyle"],
+        "pants_style": dict["PantsStyle"],
+        "hair_color": dict["HairColor"],
+        "shirt_color": dict["ShirtColor"],
+        "pants_color": dict["PantsColor"],
+        "shoes_color": dict["ShoesColor"],
+    };
+    send_to_server(connect_info);
+}
+
+function broadcast_connect(dict) {
     var connect_info = {
         'request': 'user_connected',
-        'x': x,
-        'y': y,
+        "x": dict["X"],
+        "y": dict["Y"],
+        "dir": dict["Dir"],
+        "hair_style": dict["HairStyle"],
+        "shirt_style": dict["ShirtStyle"],
+        "pants_style": dict["PantsStyle"],
+        "hair_color": dict["HairColor"],
+        "shirt_color": dict["ShirtColor"],
+        "pants_color": dict["PantsColor"],
+        "shoes_color": dict["ShoesColor"],
     };
     send_to_server(connect_info);
 }
@@ -129,8 +158,16 @@ function handle_event(event) {
         dictionary = {
             'UserConnected': true,
             'Username': event["source"],
-            'PlayerX': event["x"],
-            'PlayerY': event["y"]
+            'X': event["x"],
+            'Y': event["y"],
+            'Dir': event["dir"],
+            'HairStyle': event["hair_style"],
+            'ShirtStyle': event["shirt_style"],
+            'PantsStyle': event["pants_style"],
+            'HairColor': event["hair_color"],
+            'ShirtColor': event["shirt_color"],
+            'PantsColor': event["pants_color"],
+            'ShoesColor': event["shoes_color"],
         };
         send_to_pebble(dictionary);
     } else if (event["reason"] == "user_disconnected") {
@@ -148,8 +185,16 @@ function handle_event(event) {
             dictionary = {
                 'UserConnected': true,
                 'Username': user,
-                'PlayerX': users[user]['x'],
-                'PlayerY': users[user]['y']
+                'X': users[user]['x'],
+                'Y': users[user]['y'],
+                'Dir': users[user]["dir"],
+                'HairStyle': users[user]["hair_style"],
+                'ShirtStyle': users[user]["shirt_style"],
+                'PantsStyle': users[user]["pants_style"],
+                'HairColor': users[user]["hair_color"],
+                'ShirtColor': users[user]["shirt_color"],
+                'PantsColor': users[user]["pants_color"],
+                'ShoesColor': users[user]["shoes_color"],
             };
             send_to_pebble(dictionary);
         };
@@ -157,8 +202,25 @@ function handle_event(event) {
         dictionary = {
             'Location': true,
             'Username': event["source"],
-            'PlayerX': event["x"],
-            'PlayerY': event["y"]
+            'X': event["x"],
+            'Y': event["y"],
+            'Dir': event["dir"]
+        };
+        send_to_pebble(dictionary);
+    } else if (event["reason"] == "update") {
+        dictionary = {
+            'Update': true,
+            'Username': event["source"],
+            'X': event['x'],
+            'Y': event['y'],
+            'Dir': event["dir"],
+            'HairStyle': event["hair_style"],
+            'ShirtStyle': event["shirt_style"],
+            'PantsStyle': event["pants_style"],
+            'HairColor': event["hair_color"],
+            'ShirtColor': event["shirt_color"],
+            'PantsColor': event["pants_color"],
+            'ShoesColor': event["shoes_color"],
         };
         send_to_pebble(dictionary);
     } else {
@@ -211,8 +273,8 @@ function connect_websocket() {
 
 function disconnect_websocket() {
     if (socket) {
+        send_to_server({"request": "close"});
         console.log('Closing websocket...');
-        // send_to_server({"request": "close"});
         socket.close(); // This causes error on server, don't know why, don't care B) (aka just closing socket on error on server side)
     } else {
         console.log('Not connected to websocket!');
@@ -259,10 +321,13 @@ Pebble.addEventListener('appmessage',
             click(dict['Button']);
         }
         if (dict['BroadcastConnect']) {
-            broadcast_connect(dict['PlayerX'], dict['PlayerY']);
+            broadcast_connect(dict);
         }
         if (dict['Location']) {
-            broadcast_location(dict['PlayerX'], dict['PlayerY']);
+            broadcast_location(dict['X'], dict['Y'], dict['Dir']);
+        }
+        if (dict['Update']) {
+            broadcast_update(dict);
         }
         if (dict['Poll']) {
             poll();

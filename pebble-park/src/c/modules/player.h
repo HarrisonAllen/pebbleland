@@ -6,6 +6,7 @@
 #include "../pebble-gbc-graphics-advanced/pebble-gbc-graphics-advanced.h"
 #include "settings.h"
 #include "background.h"
+#include "data.h"
 
 typedef struct _player Player;
 struct _player {
@@ -16,24 +17,14 @@ struct _player {
     Window *window;
     TextLayer *text_layer;
     bool active;
-    int x;
-    int y;
-    Direction direction;
+    PlayerData data;
     Direction tilt_direction;
     int number;
     int hair_sprite;
     int clothes_sprite;
     int tile_offset;
     int num_tiles;
-    int hair;
-    int shirt;
-    int pants;
-    int hair_color;
-    int shirt_color;
-    int pants_color;
-    int shoe_color;
     uint8_t palette[GBC_PALETTE_NUM_BYTES];
-    char username[USERNAME_MAX_LEN+1];
     PlayerState state;
     WalkState walk_state;
     int walk_frame;
@@ -44,6 +35,8 @@ struct _player {
 Player *Player_initialize(int number, GBC_Graphics *graphics, Background *background, ClaySettings *settings, Player *player_one, Window *window);
 
 void Player_destroy(Player *player);
+
+void Player_load_data(Player *player, PlayerData data);
 
 void Player_push_input(Player *player, QueuedInput input);
 
@@ -63,11 +56,11 @@ void Player_activate(Player *player);
 
 void Player_set_username(Player *player, char *username);
 
-void Player_set_position(Player *player, int x, int y);
+void Player_set_position(Player *player, int x, int y, Direction dir);
 
-void Player_move(Player *player, int x, int y);
+void Player_update(Player *player, PlayerData player_data);
 
-void Player_load_sprite_and_palette(Player *player, int hair, int shirt, int pants, uint8_t *colors);
+void Player_move(Player *player, int x, int y, Direction dir);
 
 void Player_render_username(Player *player);
 

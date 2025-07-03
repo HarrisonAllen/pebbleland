@@ -3,6 +3,7 @@
 #include "menus/main_menu.h"
 #include "windows/slide_layer.h"
 #include "sprites/player_sprites.h"
+#include "data.h"
 
 Game *Game_init(GBC_Graphics *graphics, Window *window, ClaySettings *settings) {
     Game *game = NULL;
@@ -55,27 +56,39 @@ void Game_start(Game *game) {
     GBC_Graphics_load_entire_tilesheet_into_vram(game->graphics, CLOTHES_TILESHEET, CLOTHES_VRAM_START, PLAYER_VRAM);
 
     // TODO: load in hair, clothes, colors from web
-    uint8_t colors[4];
-    for (uint8_t i = 0; i < 4; i++) {
-        colors[i] = rand()%NUM_COLORS;
-    }
-    Game_load_player(game, game->settings->Username, 0, 
-                     rand()%HAIR_COUNT, rand()%CLOTHES_NUM_SHIRTS, 
-                     rand()%CLOTHES_NUM_PANTS, colors);
+    PlayerData player_data = {
+        .hair_style = rand()%HAIR_COUNT,
+        .shirt_style = rand()%CLOTHES_NUM_SHIRTS, 
+        .pants_style = rand()%CLOTHES_NUM_PANTS,
+    #if defined(PBL_COLOR)
+        .hair_color = rand()%NUM_COLORS,
+        .shirt_color = rand()%NUM_COLORS,
+        .pants_color = rand()%NUM_COLORS,
+        .shoes_color = rand()%NUM_COLORS,
+    #else
+        .hair_color = 0,
+        .shirt_color = 0,
+        .pants_color = 0,
+        .shoes_color = 0,
+    #endif // defined(PBL_COLOR)
+    };
+    strcpy(player_data.username, game->settings->Username);
+    
+    Game_load_player(game, 0, player_data);
     int player_x = 0; // ((GBC_Graphics_get_screen_width(game->graphics) / 2 - (PLAYER_SPRITE_WIDTH / 2)) / 8) * 8;
     int player_y = 0; // ((GBC_Graphics_get_screen_height(game->graphics) / 2 - (PLAYER_SPRITE_HEIGHT / 2)) / 8) * 8;
-    Player_set_position(game->player_one, player_x, player_y);
+    Player_set_position(game->player_one, player_x, player_y, D_DOWN);
 
     game->in_focus = true;
 
     // Load other players
     if (!OFFLINE_MODE) {
-        broadcast_connect(player_x, player_y, true);
+        broadcast_connect(player_data, true);
     }
 
     // Set up background
     Background_load_resources(game->background);
-    Background_load_screen(game->background, game->player_one->x, game->player_one->y);
+    Background_load_screen(game->background, game->player_one->data.x, game->player_one->data.y);
     
     // Show game (enable lcdc bit)
     GBC_Graphics_lcdc_set_enabled(game->graphics, true);
@@ -98,26 +111,25 @@ int Game_get_first_inactive_player_index(Game *game) {
 
 int Game_get_player_by_name(Game *game, char* username) {
     for (int i = 0; i < MAX_PLAYERS; i++) {
-        if (game->players[i]->active && strcmp(game->players[i]->username, username) == 0) {
+        if (game->players[i]->active && strcmp(game->players[i]->data.username, username) == 0) {
             return i;
         }
     }
     return -1;
 }
 
-void Game_load_player(Game *game, char* username, int player_number, int hair, int shirt, int pants, uint8_t *colors) {
+void Game_load_player(Game *game, int player_number, PlayerData player_data) {
     if (player_number == -1) {
-        APP_LOG(APP_LOG_LEVEL_WARNING, "Invalid player slot %d. Cannot add user: %s", player_number, username);
+        APP_LOG(APP_LOG_LEVEL_WARNING, "Invalid player slot %d. Cannot add user: %s", player_number, player_data.username);
     } else {
         Player *player = game->players[player_number];
-        Player_set_username(player, username);
-        Player_load_sprite_and_palette(player, hair, shirt, pants, colors);
+        Player_load_data(player, player_data);
         Player_activate(player);
     }
     GBC_Graphics_render(game->graphics);
 }
 
-void Game_update_player(Game *game, char *username, int x, int y) {
+void Game_set_player_position(Game *game, char *username, int x, int y, Direction dir) {
     int player_number = Game_get_player_by_name(game, username);
     if (player_number == -1) {
         APP_LOG(APP_LOG_LEVEL_WARNING, "User not found: %s", username);
@@ -127,36 +139,42 @@ void Game_update_player(Game *game, char *username, int x, int y) {
         if (!player->active) {
             Player_activate(player);
         }
-        Player_set_position(player, x, y);
-        APP_LOG(APP_LOG_LEVEL_DEBUG, "After update for %s (user %d): %s @ (%d, %d)", username, player_number, player->active ? "active" : "inactive", player->x, player->y);
+        Player_set_position(player, x, y, dir);
     }
     GBC_Graphics_render(game->graphics);
 }
 
-void Game_add_player(Game *game, char *username, int x, int y) {
-    int player_number = Game_get_player_by_name(game, username);
+void Game_update_player(Game *game, PlayerData player_data) {
+    int player_number = Game_get_player_by_name(game, player_data.username);
+    if (player_number == -1) {
+        APP_LOG(APP_LOG_LEVEL_WARNING, "User not found: %s", player_data.username);
+        poll_users();
+    } else if (player_number != 0) {
+        Player *player = game->players[player_number];
+        if (!player->active) {
+            Player_activate(player);
+        }
+        Player_update(player, player_data);
+    }
+    GBC_Graphics_render(game->graphics);
+}
+
+void Game_add_player(Game *game, PlayerData player_data) {
+    int player_number = Game_get_player_by_name(game, player_data.username);
     if (player_number == -1 || !game->players[player_number]->active) {
-        APP_LOG(APP_LOG_LEVEL_DEBUG, "New user: %s", username);
         int new_player_number = Game_get_first_inactive_player_index(game);
         if (new_player_number == -1) {
-            APP_LOG(APP_LOG_LEVEL_WARNING, "Player array full! Cannot add user: %s", username);
+            APP_LOG(APP_LOG_LEVEL_WARNING, "Player array full! Cannot add user: %s", player_data.username);
         } else {
-            // TODO: replace with sprite indices from server
-            uint8_t colors[4];
-            for (uint8_t i = 0; i < 4; i++) {
-                colors[i] = rand()%NUM_COLORS;
-            }
-            Game_load_player(game, username, new_player_number, 
-                            rand()%HAIR_COUNT, rand()%CLOTHES_NUM_SHIRTS, 
-                            rand()%CLOTHES_NUM_PANTS, colors);
-            Game_update_player(game, username, x, y);
+            Game_load_player(game, new_player_number, player_data);
 
             char connect_message[40];
-            snprintf(connect_message, 40, "%s connected", username);
+            snprintf(connect_message, 40, "%s connected", player_data.username);
             Game_queue_notification(game, connect_message);
         }
     } else {
-        APP_LOG(APP_LOG_LEVEL_WARNING, "User already active: %s", username);
+        APP_LOG(APP_LOG_LEVEL_INFO, "User already active: %s", player_data.username);
+        Game_update_player(game, player_data);
     }
 }
 
@@ -201,8 +219,6 @@ void Game_calibrate_accel(Game *game) {
 }
 
 void Game_step(Game *game) {
-    // TODO: add game logic
-    // TODO: don't run game logic when not in focus
     if (window_stack_get_top_window() == game->window && game->in_focus) {
         if (game->paused) {
             Game_calibrate_accel(game);

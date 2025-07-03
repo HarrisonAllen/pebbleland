@@ -151,8 +151,8 @@ def extract_tilesheet_tiles(tilesheet_image, sprite_width, sprite_height):
     tiles = []
     dims = tilesheet_image.size
 
-    for y_sprite in range(0, dims[1], TILE_HEIGHT * sprite_height):
-        for x_sprite in range(0, dims[0], TILE_WIDTH * sprite_width):
+    for x_sprite in range(0, dims[0], TILE_WIDTH * sprite_width):
+        for y_sprite in range(0, dims[1], TILE_HEIGHT * sprite_height):
             sprite = tilesheet_image.crop((x_sprite, y_sprite, 
                                           x_sprite + TILE_WIDTH * sprite_width, 
                                           y_sprite + TILE_HEIGHT * sprite_height))

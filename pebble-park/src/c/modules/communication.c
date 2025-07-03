@@ -56,7 +56,7 @@ void click(char *button) {
     }
 }
 
-void broadcast_connect(int x, int y, bool poll) {
+void broadcast_connect(PlayerData player_data, bool poll) {
     DictionaryIterator *iter;
     AppMessageResult result = app_message_outbox_begin(&iter);
 
@@ -66,23 +66,55 @@ void broadcast_connect(int x, int y, bool poll) {
             dict_write_uint8(iter, MESSAGE_KEY_Poll, 1);
         }
         dict_write_uint8(iter, MESSAGE_KEY_BroadcastConnect, 1);
-        dict_write_int16(iter, MESSAGE_KEY_PlayerX, x);
-        dict_write_int16(iter, MESSAGE_KEY_PlayerY, y);
+        dict_write_int16(iter, MESSAGE_KEY_X, player_data.x);
+        dict_write_int16(iter, MESSAGE_KEY_Y, player_data.y);
+        dict_write_uint8(iter, MESSAGE_KEY_Dir, player_data.dir);
+        dict_write_uint8(iter, MESSAGE_KEY_HairStyle, player_data.hair_style);
+        dict_write_uint8(iter, MESSAGE_KEY_ShirtStyle, player_data.shirt_style);
+        dict_write_uint8(iter, MESSAGE_KEY_PantsStyle, player_data.pants_style);
+        dict_write_uint8(iter, MESSAGE_KEY_HairColor, player_data.hair_color);
+        dict_write_uint8(iter, MESSAGE_KEY_ShirtColor, player_data.shirt_color);
+        dict_write_uint8(iter, MESSAGE_KEY_PantsColor, player_data.pants_color);
+        dict_write_uint8(iter, MESSAGE_KEY_ShoesColor, player_data.shoes_color);
 
         // Send the message
         result = app_message_outbox_send();
     }
 }
 
-void broadcast_position(int x, int y) {
+void broadcast_position(int x, int y, Direction dir) {
     DictionaryIterator *iter;
     AppMessageResult result = app_message_outbox_begin(&iter);
 
     if (result == APP_MSG_OK) {
         // what to do
         dict_write_uint8(iter, MESSAGE_KEY_Location, 1);
-        dict_write_int16(iter, MESSAGE_KEY_PlayerX, x);
-        dict_write_int16(iter, MESSAGE_KEY_PlayerY, y);
+        dict_write_int16(iter, MESSAGE_KEY_X, x);
+        dict_write_int16(iter, MESSAGE_KEY_Y, y);
+        dict_write_uint8(iter, MESSAGE_KEY_Dir, dir);
+
+        // Send the message
+        result = app_message_outbox_send();
+    }
+}
+
+void broadcast_update(PlayerData player_data) {
+    DictionaryIterator *iter;
+    AppMessageResult result = app_message_outbox_begin(&iter);
+
+    if (result == APP_MSG_OK) {
+        // what to do
+        dict_write_uint8(iter, MESSAGE_KEY_Update, 1);
+        dict_write_int16(iter, MESSAGE_KEY_X, player_data.x);
+        dict_write_int16(iter, MESSAGE_KEY_Y, player_data.y);
+        dict_write_uint8(iter, MESSAGE_KEY_Dir, player_data.dir);
+        dict_write_uint8(iter, MESSAGE_KEY_HairStyle, player_data.hair_style);
+        dict_write_uint8(iter, MESSAGE_KEY_ShirtStyle, player_data.shirt_style);
+        dict_write_uint8(iter, MESSAGE_KEY_PantsStyle, player_data.pants_style);
+        dict_write_uint8(iter, MESSAGE_KEY_HairColor, player_data.hair_color);
+        dict_write_uint8(iter, MESSAGE_KEY_ShirtColor, player_data.shirt_color);
+        dict_write_uint8(iter, MESSAGE_KEY_PantsColor, player_data.pants_color);
+        dict_write_uint8(iter, MESSAGE_KEY_ShoesColor, player_data.shoes_color);
 
         // Send the message
         result = app_message_outbox_send();

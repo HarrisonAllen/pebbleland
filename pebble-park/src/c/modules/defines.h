@@ -1,7 +1,7 @@
 #pragma once
 #include "../pebble-gbc-graphics-advanced/pebble-gbc-graphics-advanced.h"
 
-#define OFFLINE_MODE true
+#define OFFLINE_MODE false
 
 // Scroll window
 #define SCROLL_FONT FONT_KEY_GOTHIC_18

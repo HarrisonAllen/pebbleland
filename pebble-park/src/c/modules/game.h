@@ -23,7 +23,6 @@ struct _game {
     SlideLayer *notification;
     Background *background;
     MessageQueue *message_queue;
-    Layer *sprite_layer;
 };
 
 Game *Game_init(GBC_Graphics *graphics, Window *window, ClaySettings *settings);
@@ -34,11 +33,13 @@ void Game_start(Game *game);
     
 int Game_get_first_inactive_player_index(Game *game);
     
-void Game_load_player(Game *game, char* username, int player_number, int hair, int shirt, int pants, uint8_t *colors);
-    
-void Game_update_player(Game *game, char *username, int x, int y);
+void Game_load_player(Game *game, int player_number, PlayerData player_data);
 
-void Game_add_player(Game *game, char *username, int x, int y);
+void Game_set_player_position(Game *game, char *username, int x, int y, Direction dir);
+    
+void Game_update_player(Game *game, PlayerData player_data);
+
+void Game_add_player(Game *game, PlayerData player_data);
 
 void Game_remove_player(Game *game, char *username);
 

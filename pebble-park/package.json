@@ -36,14 +36,24 @@
       "Click",
       "Button",
       "Source",
-      "PlayerX",
-      "PlayerY",
       "Location",
+      "Update",
       "Poll",
       "UserConnected",
       "UserDisconnected",
       "BroadcastConnect",
-      "Tilt"
+      "Tilt",
+      "_PLAYER_KEYS_",
+      "X",
+      "Y",
+      "Dir",
+      "HairStyle",
+      "ShirtStyle",
+      "PantsStyle",
+      "HairColor",
+      "ShirtColor",
+      "PantsColor",
+      "ShoesColor"
     ],
     "resources": {
       "media": [
