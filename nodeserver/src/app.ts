@@ -1,64 +1,24 @@
 const sqlite3 = require('sqlite3').verbose();
-var WebSocketServer: any = require('ws').Server
-  , wss: typeof WebSocketServer = new WebSocketServer({ port: 5001 });
-const fs = require('fs');
+const ws_import = require('ws');
+const bcrypt = require('bcryptjs');
+const express = require('express');
+import { AppWebSocket } from "./app_web_socket";
+import { app, set_up_express } from "./express";
+import { set_up_routes } from "./routes";
 
-class AppWebSocket {
-    ws: WebSocket;
-    username: string|undefined = undefined;
-    x: number = 0;
-    y: number = 0;
-    dir: number = 0;
-    hair_style: number = 0;
-    shirt_style: number = 0;
-    pants_style: number = 0;
-    hair_color: number = 0;
-    shirt_color: number = 0;
-    pants_color: number = 0;
-    shoes_color: number = 0;
+// Initializers
+set_up_express();
+set_up_routes();
 
-    constructor(ws: WebSocket) {
-        this.ws = ws;
-    }
-
-    get_player_location(): {[item: string] : string|number|undefined} {
-        var data:{[item: string] : string|number|undefined} = {};
-        data["x"] = this.x;
-        data["y"] = this.y;
-        data["dir"] = this.dir;
-        return data
-    }
-
-    get_player_data(): {[item: string] : string|number|undefined} {
-        var data:{[item: string] : string|number|undefined} = {};
-        data["hair_style"] = this.hair_style;
-        data["shirt_style"] = this.shirt_style;
-        data["pants_style"] = this.pants_style;
-        data["hair_color"] = this.hair_color;
-        data["shirt_color"] = this.shirt_color;
-        data["pants_color"] = this.pants_color;
-        data["shoes_color"] = this.shoes_color;
-
-        return data
-    }
-
-    set_player_location(data: {[item: string] : any}) {
-        this.x = data["x"];
-        this.y = data["y"];
-        this.dir = data["dir"];
-    }
-
-    set_player_data(data: {[item: string] : any}) {
-        this.hair_style = data["hair_style"];
-        this.shirt_style = data["shirt_style"];
-        this.pants_style = data["pants_style"];
-        this.hair_color = data["hair_color"];
-        this.shirt_color = data["shirt_color"];
-        this.pants_color = data["pants_color"];
-        this.shoes_color = data["shoes_color"];
-    }
-};
-
+// Server initialization
+const server = app.listen(5001);
+const wss:any = new ws_import.Server({ noServer: true });
+server.on('upgrade', (request: any, socket: any, head: any) => {
+    wss.handleUpgrade(request, socket, head, function (ws: WebSocket) {
+        wss.emit('connection', ws, request);
+    });
+});
+  
 // TODO: server tick (4 ticks?)
 // TODO: Only broadcast changes on server tick
 // TODO: make server send queue

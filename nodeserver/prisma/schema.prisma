@@ -1,0 +1,89 @@
+// Prisma Shenanigans
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// initial testing
+model TestUser {
+  username  String @id @unique
+  password String
+
+  favoriteNumber Int @default(0)
+}
+
+// User
+
+model User {
+  accountID   String
+  watchID     String
+  userInfo    UserInfo?
+  accountInfo AccountInfo?
+
+  @@id([accountID, watchID])
+}
+
+// User -> Account Info
+
+model AccountInfo {
+  user          User      @relation(fields: [userAccountID, userWatchID], references: [accountID, watchID]) 
+  userAccountID String
+  userWatchID   String
+
+  password      String
+  banStatus     BanStatus @default(NOT_BANNED)
+  banExp        DateTime  @default(now())
+  banCount      Int       @default(0)
+
+  @@id([userAccountID, userWatchID])
+}
+
+enum BanStatus {
+  NOT_BANNED
+  TEMP_BAN
+  PERM_BAN
+}
+
+// User -> Info
+
+model UserInfo {
+  user          User      @relation(fields: [userAccountID, userWatchID], references: [accountID, watchID]) 
+  userAccountID String
+  userWatchID   String
+  
+  username      String
+  status        String    @default("Hi there!")
+  state         UserState @default(ONLINE)
+  lastSeen      DateTime  @default(now())
+  hairStyle     Int       @default(0)
+  shirtStyle    Int       @default(0)
+  pantsStyle    Int       @default(0)
+  hairColor     Int       @default(0)
+  shirtColor    Int       @default(0)
+  pantsColor    Int       @default(0)
+  shoesColor    Int       @default(0)
+
+  @@id([userAccountID, userWatchID])
+}
+
+enum UserState {
+  ONLINE
+  OFFLINE
+}
+
+// Login history
+
+model LoginAttempts {
+  id        Int       @id @default(autoincrement())
+  accountID String
+  watchID   String
+  username  String
+  IPAddress String
+  success   Boolean
+  time      DateTime
+}

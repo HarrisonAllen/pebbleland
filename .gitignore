@@ -5,3 +5,4 @@ database/
 __pycache__/
 .DS_Store
 graphics/sprites/
+nodeserver/src/secret_key.ts
