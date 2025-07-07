@@ -12,6 +12,8 @@ set_up_routes();
 
 // Server initialization
 const server = app.listen(5001);
+// TODO: move websocket to its own file
+// TODO: migrate db accesses to prisma
 const wss:any = new ws_import.Server({ noServer: true });
 server.on('upgrade', (request: any, socket: any, head: any) => {
     wss.handleUpgrade(request, socket, head, function (ws: WebSocket) {

@@ -14,14 +14,14 @@ export function set_up_routes() {
     });
     
     // Protected route example
-    app.get('/my_fave_num', auth.authenticate_token, (req:any, res:any) => {
-        res.status(200).send('My favorite number is ' + req.user.favoriteNumber);
-    });
+    // app.get('/my_fave_num', auth.authenticate_token, (req:any, res:any) => {
+    //     res.status(200).send('My favorite number is ' + req.user.favoriteNumber);
+    // });
     
     // Protected route example
-    app.post('/set_my_fave_num', auth.authenticate_token, (req:any, res:any) => {
-        ureqs.set_fave_num(req, res);
-    });
+    // app.post('/set_my_fave_num', auth.authenticate_token, (req:any, res:any) => {
+    //     ureqs.set_fave_num(req, res);
+    // });
     
     app.post('/post-test', (req:any, res:any) => {
         // Access the body from the request
@@ -33,7 +33,7 @@ export function set_up_routes() {
     
     // AUTHENTICATION
     
-    app.post('/signup', (req:any, res:any) => auth.register_user(req, res));
+    app.post('/register', (req:any, res:any) => auth.register_user(req, res));
     
     app.post('/login', (req:any, res:any) => auth.login(req, res));
 }

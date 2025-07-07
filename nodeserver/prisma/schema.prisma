@@ -22,10 +22,10 @@ model TestUser {
 model User {
   accountID   String
   watchID     String
-  userInfo    UserInfo?
   accountInfo AccountInfo?
+  playerInfo  PlayerInfo?
 
-  @@id([accountID, watchID])
+  @@id(fields: [accountID, watchID], name: "userID")
 }
 
 // User -> Account Info
@@ -36,11 +36,15 @@ model AccountInfo {
   userWatchID   String
 
   password      String
-  banStatus     BanStatus @default(NOT_BANNED)
-  banExp        DateTime  @default(now())
-  banCount      Int       @default(0)
+  email         String
 
-  @@id([userAccountID, userWatchID])
+  creationTime  DateTime  @default(now())
+
+  // banStatus     BanStatus @default(NOT_BANNED)
+  // banExp        DateTime  @default(now())
+  // banCount      Int       @default(0)
+
+  @@id(fields: [userAccountID, userWatchID], name: "AccountInfoID")
 }
 
 enum BanStatus {
@@ -51,13 +55,13 @@ enum BanStatus {
 
 // User -> Info
 
-model UserInfo {
+model PlayerInfo {
   user          User      @relation(fields: [userAccountID, userWatchID], references: [accountID, watchID]) 
   userAccountID String
   userWatchID   String
   
   username      String
-  status        String    @default("Hi there!")
+  status        String    @default("Hi, I'm new here!")
   state         UserState @default(ONLINE)
   lastSeen      DateTime  @default(now())
   hairStyle     Int       @default(0)
@@ -68,7 +72,7 @@ model UserInfo {
   pantsColor    Int       @default(0)
   shoesColor    Int       @default(0)
 
-  @@id([userAccountID, userWatchID])
+  @@id(fields: [userAccountID, userWatchID], name: "PlayerInfoID")
 }
 
 enum UserState {

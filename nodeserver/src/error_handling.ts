@@ -30,17 +30,15 @@ export function invalid_credentials(res:any) {
     });
 }
 
-export function unknown_user(res:any, username:string) {
+export function unknown_user(res:any) {
     res.status(400).json({
-        error: ERROR_CODES.unknown_user,
-        username: username
+        error: ERROR_CODES.unknown_user
     });
 }
 
-export function user_exists(res:any, username:string) {
+export function user_exists(res:any) {
     res.status(400).json({
-        error: ERROR_CODES.user_exists,
-        username: username
+        error: ERROR_CODES.user_exists
     });
 }
 

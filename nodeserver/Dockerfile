@@ -21,8 +21,11 @@ RUN npm run build
 
 # Prisma time
 RUN apt-get update -y && apt-get install -y openssl
-RUN npx prisma migrate dev --name initialize
-# RUN npx prisma db push
+# ! This doesn't work because we don't mount the db at build time!
+# ! Use make_fresh_db.sh instead
+# ! RUN npx prisma migrate dev --name initialize
+# ! RUN npx prisma db push --accept-data-loss
+# ! RUN npx prisma migrate reset --force
 RUN npx prisma generate
 
 # Expose port 5001 for the WebSocket server

@@ -12,8 +12,14 @@
         "bcryptjs": "^3.0.2",
         "jsonwebtoken": "^9.0.2"
     },
+    "devDependencies": {
+        "ts-node": "^10.9.2"
+    },
     "scripts": {
         "build": "rimraf ./dist && tsc",
         "start": "npm run build && node dist/app.js"
+    },
+    "prisma": {
+        "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} src/prisma/seed.ts"
     }
 }

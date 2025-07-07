@@ -3,3 +3,6 @@ npm-debug.log
 Dockerfile
 .dockerignore
 database/*
+node_modules/*
+dist/
+prisma/migrations
