@@ -30,7 +30,6 @@ export async function register_user(req:any, res:any) {
 
     // Hash password
     const hashed_password = await bcrypt.hash(password, 10);
-    const hashed_email = await bcrypt.hash(email, 8);
 
     const existing_user = await prisma.user.findUnique({ 
         where: { 
@@ -53,7 +52,7 @@ export async function register_user(req:any, res:any) {
                 accountInfo: {
                     create: {
                         password: hashed_password,
-                        email: hashed_email
+                        email: email
                     }
                 },
                 playerInfo: {
