@@ -9,14 +9,6 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// initial testing
-model TestUser {
-  username  String @id @unique
-  password String
-
-  favoriteNumber Int @default(0)
-}
-
 // User
 
 model User {

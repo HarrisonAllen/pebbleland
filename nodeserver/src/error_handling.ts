@@ -1,15 +1,15 @@
-const ERROR_CODES = Object.freeze({
+export const ERROR_CODES = Object.freeze({
     // auth
-    no_token: 0,
-    invalid_token: 1,
-    invalid_credentials: 2,
+    no_token: 4000,
+    invalid_token: 4001,
+    invalid_credentials: 4002,
 
     // lookup
-    unknown_user: 3,
-    user_exists: 4,
+    unknown_user: 4003,
+    user_exists: 4004,
 
     // other
-    generic: 99
+    generic: 4099
 });
 
 export function no_token(res:any) {

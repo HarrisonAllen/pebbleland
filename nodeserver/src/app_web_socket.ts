@@ -1,5 +1,11 @@
+import { ERROR_CODES } from "./error_handling";
+import { prisma } from "./prisma";
+
 export class AppWebSocket {
     ws: WebSocket;
+    authenticated: boolean = false;
+    account_id: string = "";
+    watch_id: string = "";
     username: string|undefined = undefined;
     x: number = 0;
     y: number = 0;
@@ -43,7 +49,7 @@ export class AppWebSocket {
         this.dir = data["dir"];
     }
 
-    set_player_data(data: {[item: string] : any}) {
+    async set_player_data(data: {[item: string] : any}) {
         this.hair_style = data["hair_style"];
         this.shirt_style = data["shirt_style"];
         this.pants_style = data["pants_style"];
@@ -51,5 +57,63 @@ export class AppWebSocket {
         this.shirt_color = data["shirt_color"];
         this.pants_color = data["pants_color"];
         this.shoes_color = data["shoes_color"];
+
+        const user = await prisma.user.update({
+            where: {
+                userID: {
+                    accountID: this.account_id,
+                    watchID: this.watch_id 
+                }
+            },
+            data: {
+                playerInfo: {
+                    update: {
+                        hairStyle: this.hair_style,
+                        shirtStyle: this.shirt_style,
+                        pantsStyle: this.pants_style,
+                        hairColor: this.hair_color,
+                        shirtColor: this.shirt_color,
+                        pantsColor: this.pants_color,
+                        shoesColor: this.shoes_color,
+                    }
+                }
+            }
+        });
+    }
+    
+    async load_player_data() {
+        const user = await prisma.user.findUnique({ 
+            where: { 
+                userID: {
+                    accountID: this.account_id,
+                    watchID: this.watch_id 
+                }
+            },
+            select: {
+                playerInfo: {
+                    select: {
+                        username: true,
+                        status: true,
+                        hairStyle: true,
+                        shirtStyle: true,
+                        pantsStyle: true,
+                        hairColor: true,
+                        shirtColor: true,
+                        pantsColor: true,
+                        shoesColor: true,
+                    }
+                }
+            }
+        });
+        this.username = user.playerInfo.username;
+        this.set_player_data({
+            "hair_style": user.playerInfo.hairStyle,
+            "shirt_style": user.playerInfo.shirtStyle,
+            "pants_style": user.playerInfo.pantsStyle,
+            "hair_color": user.playerInfo.hairColor,
+            "shirt_color": user.playerInfo.shirtColor,
+            "pants_color": user.playerInfo.pantsColor,
+            "shoes_color": user.playerInfo.shoesColor,
+        });
     }
 };

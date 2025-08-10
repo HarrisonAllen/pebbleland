@@ -1,5 +1,5 @@
 // Auth
-export const TOKEN_EXPIRATION = 60; // Seconds: do int, could do "1h" or "30m" as string
+export const TOKEN_EXPIRATION = "1h"; // Seconds: do int, could do "1h" or "30m" as string
 
 // Player
 export const USERNAME_MAX_CHARS = 10;

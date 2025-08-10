@@ -8,3 +8,5 @@ graphics/sprites/
 nodeserver/src/secret_key.ts
 dist/
 nodeserver/prisma/migrations/
+pebble-park/.lock-waf_darwin_build
+pebble-park/package-lock.json

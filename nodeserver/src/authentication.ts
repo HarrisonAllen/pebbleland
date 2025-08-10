@@ -7,8 +7,27 @@ import { TOKEN_EXPIRATION } from './config'
 import * as errs from "./error_handling";
 import { WatchDirectoryFlags } from 'typescript';
 
+export async function authenticate_ws_token(token:string) {
+    const result:{[key: string] : any} = {};
+    result["authenticated"] = false;
+    if (!token) {
+        result["error"] = errs.ERROR_CODES.no_token;
+    } else {
+        jwt.verify(token, secret_key, (err:any, user_id:any) => {
+            if (err) {
+                result["error"] = errs.ERROR_CODES.invalid_token;
+            } else {
+                result["user_id"] = user_id;
+                result["authenticated"] = true;
+            }
+        });
+    }
+    
+    return result;
+};
+
 // Middleware for token verification
-export async function authenticate_token (req:any, res:any, next:Function) {
+export async function authenticate_token(req:any, res:any, next:Function) {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
   
