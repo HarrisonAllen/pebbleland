@@ -6,7 +6,6 @@
 void login(char *username);
 void connect(char *username);
 void disconnect(char *username);
-void click(char *button);
 void broadcast_connect(PlayerData player_data, bool poll);
 void broadcast_position(int x, int y, Direction dir);
 void broadcast_update(PlayerData player_data);

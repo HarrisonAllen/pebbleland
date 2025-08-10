@@ -47,6 +47,8 @@ export async function register_user(req:any, res:any) {
     if (!username) return errs.generic_error(res, "Username required");
     if (!email) return errs.generic_error(res, "Email required");
 
+    // TODO: if password too short or too long: error
+
     // Hash password
     const hashed_password = await bcrypt.hash(password, 10);
 
@@ -90,6 +92,7 @@ export async function register_user(req:any, res:any) {
 }
 
 export async function login(req:any, res:any) {
+    console.log("Login request!");
     const { account_id, watch_id, password } = req.body;
 
     const user = await prisma.user.findUnique({ 

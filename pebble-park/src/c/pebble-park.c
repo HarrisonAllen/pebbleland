@@ -19,8 +19,6 @@ static bool s_logged_in = false;
 static bool s_connected = false;
 static AppState s_state = S_LOGIN;
 
-static int s_clicks = 0;
-
 static ClaySettings s_settings;
 
 // Save the s_settings to persistent storage
@@ -50,6 +48,8 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
     Tuple *login_success_t = dict_find(iterator, MESSAGE_KEY_LoginSuccessful);
     if (login_success_t) {
       if (login_success_t->value->int32 == 1) {
+        // TODO:
+        // * 
         Tuple *username_t = dict_find(iterator, MESSAGE_KEY_Username);
         if (username_t) {
           strcpy(s_settings.Username, username_t->value->cstring);
@@ -69,19 +69,6 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
   if (new_username_t) {
     strcpy(s_settings.Username, new_username_t->value->cstring);
   }
-  
-  // Tuple *clicks_t = dict_find(iterator, MESSAGE_KEY_Clicks);
-  // if (clicks_t) {
-  //   Tuple *source_t = dict_find(iterator, MESSAGE_KEY_Source);
-  //   s_clicks = clicks_t->value->int32;
-  //   static char clicks_message[40];
-  //   if (source_t) {
-  //     snprintf(clicks_message, 40, "Last click:\n\t%s\nClicks: %d", source_t->value->cstring, s_clicks);
-  //   } else {
-  //     snprintf(clicks_message, 40, "Last click:\n\tUNKNOWN\nClicks: %d", s_clicks);
-  //   }
-  //   text_layer_set_text(s_sub_text_layer, clicks_message);
-  // }
 
   if (s_state == S_PLAY) {
     Tuple *user_connected_t = dict_find(iterator, MESSAGE_KEY_UserConnected);
@@ -175,7 +162,8 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
   if (s_state == S_LOGIN) {
     if (!OFFLINE_MODE) {
-      connect(s_settings.Username);
+      // connect(s_settings.Username);
+      login(s_settings.Username);
     } else {
       start_game();
     }

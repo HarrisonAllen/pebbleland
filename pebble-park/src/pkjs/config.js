@@ -11,7 +11,7 @@ module.exports = [
                 "messageKey": "NewUsername",
                 "defaultValue": "",
                 "label": "Username",
-                "description": "Keep it to 20 characters or less",
+                "description": "Keep it to 8 characters or less",
                 "attributes": {
                     "type": "text"
                 }

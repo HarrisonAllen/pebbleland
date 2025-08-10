@@ -42,20 +42,6 @@ void disconnect(char *username) {
     }
 }
 
-void click(char *button) {
-    DictionaryIterator *iter;
-    AppMessageResult result = app_message_outbox_begin(&iter);
-
-    if (result == APP_MSG_OK) {
-        // what to do
-        dict_write_uint8(iter, MESSAGE_KEY_Click, 1);
-        dict_write_cstring(iter, MESSAGE_KEY_Button, button);
-
-        // Send the message
-        result = app_message_outbox_send();
-    }
-}
-
 void broadcast_connect(PlayerData player_data, bool poll) {
     DictionaryIterator *iter;
     AppMessageResult result = app_message_outbox_begin(&iter);
