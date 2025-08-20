@@ -4,26 +4,26 @@ import { app } from "./express";
 
 export function set_up_routes() {
     // TODO: error handling
-    app.get('/users', async (req:any, res:any) => { 
+    app.get("/users", async (req:any, res:any) => { 
         ureqs.get_users(req, res) 
     });
     
     // Protected route example
-    app.get('/my_info', auth.authenticate_token, (req:any, res:any) => {
+    app.get("/my_info", auth.authenticate_token, (req:any, res:any) => {
         ureqs.get_my_info(req, res);
     });
     
     // Protected route example
-    // app.get('/my_fave_num', auth.authenticate_token, (req:any, res:any) => {
-    //     res.status(200).send('My favorite number is ' + req.user.favoriteNumber);
+    // app.get("/my_fave_num", auth.authenticate_token, (req:any, res:any) => {
+    //     res.status(200).send("My favorite number is " + req.user.favoriteNumber);
     // });
     
     // Protected route example
-    // app.post('/set_my_fave_num', auth.authenticate_token, (req:any, res:any) => {
+    // app.post("/set_my_fave_num", auth.authenticate_token, (req:any, res:any) => {
     //     ureqs.set_fave_num(req, res);
     // });
     
-    app.post('/post-test', (req:any, res:any) => {
+    app.post("/post-test", (req:any, res:any) => {
         // Access the body from the request
         const requestBody = req.body;
     
@@ -33,7 +33,11 @@ export function set_up_routes() {
     
     // AUTHENTICATION
     
-    app.post('/register', (req:any, res:any) => auth.register_user(req, res));
+    app.post("/register", (req:any, res:any) => auth.register_user(req, res));
     
-    app.post('/login', (req:any, res:any) => auth.login(req, res));
+    app.post("/login", (req:any, res:any) => auth.login(req, res));
+
+    app.post("/update_username", auth.authenticate_token, (req:any, res:any) => ureqs.update_username(req, res));
+
+    app.post("/update_email", auth.authenticate_token, (req:any, res:any) => ureqs.update_email(req, res));
 }

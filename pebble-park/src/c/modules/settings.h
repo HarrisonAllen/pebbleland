@@ -5,6 +5,8 @@
 // Define settings struct
 typedef struct ClaySettings {
     char Username[USERNAME_MAX_LEN];
+    char Password[PASSWORD_MAX_LEN];
+    char Email[EMAIL_MAX_LEN];
     bool Tilt;
 } ClaySettings;
 
@@ -13,8 +15,10 @@ static void save_settings(ClaySettings *settings) {
     persist_write_data(SETTINGS_KEY, settings, sizeof(*settings));
 }
 
-static void default_settings(ClaySettings *settings) {  
+static void default_settings(ClaySettings *settings) {
     strcpy(settings->Username, ""); 
+    strcpy(settings->Password, ""); 
+    strcpy(settings->Email, ""); 
     settings->Tilt = false;
 }
 

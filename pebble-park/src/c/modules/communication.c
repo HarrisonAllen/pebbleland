@@ -1,6 +1,6 @@
 #include "communication.h"
 
-void login(char *username) {
+void login(char *username, char *password, char *email) {
     DictionaryIterator *iter;
     AppMessageResult result = app_message_outbox_begin(&iter);
 
@@ -8,6 +8,8 @@ void login(char *username) {
         // what to do
         dict_write_uint8(iter, MESSAGE_KEY_RequestLogin, 1);
         dict_write_cstring(iter, MESSAGE_KEY_Username, username);
+        dict_write_cstring(iter, MESSAGE_KEY_Password, password);
+        dict_write_cstring(iter, MESSAGE_KEY_Email, email);
 
         // Send the message
         result = app_message_outbox_send();

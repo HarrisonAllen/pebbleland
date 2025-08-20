@@ -1,4 +1,4 @@
-var base_url = "10.0.0.47:5001";
+var base_url = "http://10.0.0.47:5001";
 // var base_url = "localhost:5001";
 
 // Import the Clay package
@@ -11,6 +11,15 @@ var clay = new Clay(clayConfig);
 var socket;
 var set_username;
 
+var s_username;
+var s_password;
+var s_email;
+var s_token = null;
+var login_awaiting_username = false;
+
+const ACC_MOD = "";
+const WAT_MOD = ACC_MOD;
+
 const ERROR_CODES = Object.freeze({
     // auth
     no_token: 4000,
@@ -20,15 +29,18 @@ const ERROR_CODES = Object.freeze({
     // lookup
     unknown_user: 4003,
     user_exists: 4004,
+    username_taken: 4005,
 
     // other
     generic: 4099
 });
 
 const PATHS = Object.freeze({
-    "login": base_url + "/login",
-    "register": base_url + "/register",
-    "my_info": base_url + "/my_info"
+    login: base_url + "/login",
+    register: base_url + "/register",
+    my_info: base_url + "/my_info",
+    update_username: base_url + "/update_username",
+    update_email: base_url + "/update_email"
 });
 
 // login:
@@ -53,33 +65,31 @@ const PATHS = Object.freeze({
 
 
 // request data from url
-var xhrGetRequest = function (url, callback) {
+var xhrGetRequest = function (url, token, callback) {
 	var xhr = new XMLHttpRequest();
 	xhr.onload = function () {
 		callback(this.responseText);
 	};
 	xhr.open("GET", url);
+    if (token != null) {
+        xhr.setRequestHeader("Authorization", "Bearer " + token);
+    }
     console.log("get: " + url);
 	xhr.send();
 };
 
-var xhrPostRequest = function (url, data, callback) {
+var xhrPostRequest = function (url, data, token, callback) {
 	var xhr = new XMLHttpRequest();
 	xhr.onload = function () {
 		callback(this.responseText);
 	};
 	xhr.open("POST", url);
     xhr.setRequestHeader("Content-Type", "application/json");
+    if (token != null) {
+        xhr.setRequestHeader("Authorization", "Bearer " + token);
+    }
     console.log("post: " + JSON.stringify(data));
     xhr.send(JSON.stringify(data));
-}
-
-function mainPage() {
-	xhrGetRequest("http://" + base_url,
-		function(responseText) {
-            console.log("received data: " + responseText);
-		}
-	);
 }
 
 function send_to_pebble(dictionary) {
@@ -98,48 +108,152 @@ function send_to_server(dictionary) {
     socket.send(JSON.stringify(dictionary));
 }
 
-function login(username, password) {
-    xhrGetRequest("https://dummy.restapiexample.com/api/v1/employees", function(responseText) {
-        console.log("received data: " + responseText);
-    });
-    // TODO: Send post request
-    // * "acccount_id"
-    // * "watch_id"
-    // * "password"
-    var login_info = {
-        "account_token": Pebble.getAccountToken(),
-        "watch_token": Pebble.getWatchToken(),
-        "username": username,
-        "password": password
+function complete_login(username) {
+    dictionary = {
+        "LoginSuccessful": true,
+        "Username": username,
     };
-    xhrPostRequest(PATHS.login, login_info, login_response_handler)
-
-    // send_to_server(login_info);
-    // TODO: 
-    // if success:
-    // * store token
-    // * send "login success" key to pebble
-    // if unknown user:
-    // * register instead
-    // if invalid credentials:
-    // * display registration error
+    console.log("Logged in as " + username);
+    send_to_pebble(dictionary);
 }
 
-function login_response_handler(response) {
-    if ("token" in response) {
-        console.log("Got token! " + response.token);
+function login(username, password, email, try_register) {
+    var login_info = {
+        "account_id": Pebble.getAccountToken() + ACC_MOD,
+        "watch_id": Pebble.getWatchToken() + WAT_MOD,
+        "password": password
+    };
+    xhrPostRequest(PATHS.login, login_info, null, function(response) {
+        login_response_handler(response, username, password, email, try_register);
+    });
+}
+
+function login_response_handler(response, username, password, email, try_register) {
+    console.log("Login response: " + response);
+    var json_response = JSON.parse(response);
+    if ("token" in json_response) {
+        console.log("Got token! " + json_response.token);
+        s_token = json_response.token;
+        xhrGetRequest(PATHS.my_info, s_token, function(response) {
+            console.log("My info: " + response);
+        });
+        var server_username = json_response.username;
+        var server_email = json_response.email;
+        // TODO: consider adding these in
+        if (server_username != username) {
+            // // Update username
+            login_awaiting_username = true;
+            var username_info = {"username": username};
+            xhrPostRequest(PATHS.update_username, username_info, s_token, function(response) {
+                username_update_handler(response);
+            });
+        }
+        if (server_email != email) {
+            // Update email
+            var email_info = {"email": email};
+            xhrPostRequest(PATHS.update_email, email_info, function(response) {
+                email_update_handler(response);
+            });
+        }
+        if (!login_awaiting_username) {
+            complete_login(username);
+        }
     } else {
-        console.log("Got error: " + response.error);
-        if (response.error == ERROR_CODES.unknown_user) {
-            console.log("User not found, registering...");
-        } else if (response.error == ERROR_CODES.invalid_credentials) {
-            console.log("Invalid credentials!");
+        console.log("Got error: " + json_response.error);
+        switch (json_response.error) {
+            case ERROR_CODES.unknown_user:
+                console.log("User not found");
+                if (try_register) {
+                    console.log("Registering...");
+                    register(username, password, email);
+                } else {
+                    send_to_pebble({"Message": "Login failed. Reason: user does not exist"});
+                }
+                break;
+            case ERROR_CODES.invalid_credentials:
+                console.log("Invalid credentials");
+                send_to_pebble({"Message": "Login failed. Reason: Invalid credentials"});
+                break;
+            case ERROR_CODES.generic:
+                console.log("Error: " + json_response.message);
+                send_to_pebble({"Message": "Error: " + json_response.message});
+                break;
+            default:
+                console.log("Unhandled error");
+                send_to_pebble({"Message": "Unhandled error: " + json_response.error + ": " + json_response.message});
+                break;
         }
     }
 }
 
-function register(password, username, email) {
-    
+function register(username, password, email) {
+    var registration_info = {
+        "account_id": Pebble.getAccountToken() + ACC_MOD,
+        "watch_id": Pebble.getWatchToken() + WAT_MOD,
+        "username": username,
+        "password": password,
+        "email": email,
+    };
+    xhrPostRequest(PATHS.register, registration_info, null, function(response) {
+        registration_response_handler(response, username, password, email);
+    });
+}
+
+function registration_response_handler(response, username, password, email) {
+    console.log("Registration response: ", response);
+    var json_response = JSON.parse(response);
+    if ("registration_success" in json_response) {
+        console.log("Registration success, logging in");
+        login(username, password, email, false);
+    } else {
+        console.log("Got error: " + json_response.error);
+        switch (json_response.error) {
+            case ERROR_CODES.user_exists:
+                console.log("User already exists");
+                send_to_pebble({"Message": "Registration failed. Reason: user already exists"});
+                break;
+            case ERROR_CODES.username_taken:
+                console.log("Username already taken");
+                send_to_pebble({"Message": "Registration failed. Reason: username \"" + username + "\" already taken"});
+                break;
+            case ERROR_CODES.generic:
+                console.log("Error: " + json_response.message);
+                send_to_pebble({"Message": "Error: " + json_response.message});
+                break;
+            default:
+                console.log("Unhandled error");
+                break;
+        }
+    }
+}
+
+function username_update_handler(response) {
+    console.log("Username update response: ", response);
+    var json_response = JSON.parse(response);
+    if ("username_updated" in json_response) {
+        if (json_response.username_updated) {
+            console.log("Username updated");
+            if (login_awaiting_username) {
+                complete_login(json_response.username);
+            }
+            // send_to_pebble({"Message": "Username update failed. Reason: username \"" + json_response.new_username + "\" already taken. Using previous username: \"" + json_response.old_username + "\""});
+        } else {
+            if (json_response.old_username != json_response.new_username) {
+                send_to_pebble({"Message": "Username update failed. Reason: username \"" + json_response.new_username + "\" already taken. Using previous username: \"" + json_response.old_username + "\""});
+            }
+        }
+    } else {
+        console.log("Got error: " + json_response.error);
+        switch (json_response.error) {
+            case ERROR_CODES.generic:
+                console.log("Error: " + json_response.message);
+                send_to_pebble({"Message": "Error: " + json_response.message});
+                break;
+            default:
+                console.log("Unhandled error");
+                break;
+        }
+    }
 }
 
 function broadcast_location(x, y, dir) {
@@ -152,7 +266,7 @@ function broadcast_location(x, y, dir) {
     send_to_server(location_info);
 }
 
-function broadcast_update(dict) { // This is where I left off
+function broadcast_update(dict) {
     var connect_info = {
         "request": "update",
         "x": dict["X"],
@@ -359,8 +473,14 @@ Pebble.addEventListener("appmessage",
         var dict = e.payload;
 		console.log("AppMessage received!", JSON.stringify(dict));
 
+        // TODO: remove this once implemented on watch
         if (dict["RequestLogin"]) {
-            login("test", "test");
+            login(
+                dict["Username"],
+                dict["Password"],
+                dict["Email"],
+                true
+            );
         }
         if (dict["Connect"]) {
             set_username = dict["Username"];

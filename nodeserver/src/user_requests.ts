@@ -70,3 +70,91 @@ export async function get_users(req: any, res: any) {
         errs.generic_error(res, "Failed to get users");
     }
 }
+
+export async function update_username(req: any, res: any) {
+    const { account_id, watch_id } = req.user_id;
+    const { username } = req.body;
+    try {
+        const this_user = await prisma.user.findUnique({ 
+            where: { 
+                userID: {
+                    accountID: account_id,
+                    watchID: watch_id 
+                },
+            },
+            select: {
+                playerInfo: {
+                    select: {
+                        username: true
+                    }
+                }
+            }
+        });
+
+        if (this_user?.playerInfo?.username == username) {
+            return res.status(200).json({"username_updated": false, "old_username": this_user?.playerInfo?.username, "new_username": username});
+        }
+
+        const user_with_name = await prisma.user.findFirst({ 
+            where: { 
+                playerInfo: {
+                    username: username
+                },
+            }
+        });
+
+        if (user_with_name != null) {
+            return res.status(200).json({"username_updated": false,  "old_username": this_user?.playerInfo?.username, "new_username": username});
+        }
+
+        const user = await prisma.user.update({
+            where: {
+                userID: {
+                    accountID: account_id,
+                    watchID: watch_id 
+                }
+            },
+            data: {
+                playerInfo: {
+                    update: {
+                        username: username
+                    }
+                }
+            }
+        });
+
+        console.log("Updated username to " + username);
+        res.status(200).json({"username_updated": true,  "old_username": this_user?.playerInfo?.username, "new_username": username});
+    } catch (error:any) {
+        console.log(error)
+        errs.generic_error(res, "Failed to get users");
+    }
+}
+
+export async function update_email(req: any, res: any) {
+    const { account_id, watch_id } = req.user_id;
+    const { email } = req.body;
+    try {
+        const user = await prisma.user.update({
+            where: {
+                userID: {
+                    accountID: account_id,
+                    watchID: watch_id 
+                }
+            },
+            data: {
+                accountInfo: {
+                    update: {
+                        email: email
+                    }
+                }
+            }
+        });
+
+        console.log("Updated email to " + email);
+        res.status(200).json({"email_updated": true, "email": email});
+    } catch (error:any) {
+        console.log(error)
+        errs.generic_error(res, "Failed to get users");
+    }
+}

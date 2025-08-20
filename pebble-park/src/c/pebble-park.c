@@ -38,6 +38,27 @@ static void start_game() {
 }
 
 static void inbox_received_callback(DictionaryIterator *iterator, void *context) {
+  // Clay settings
+  // - Only update if game isn't started
+  if (s_state == S_LOGIN) {
+    Tuple *username_t = dict_find(iterator, MESSAGE_KEY_Username);
+    if (username_t) {
+      strcpy(s_settings.Username, username_t->value->cstring);
+      APP_LOG(APP_LOG_LEVEL_DEBUG, "Username: %s -> %s", username_t->value->cstring, s_settings.Username);
+    }
+
+    Tuple *password_t = dict_find(iterator, MESSAGE_KEY_Password);
+    if (password_t) {
+      strcpy(s_settings.Password, password_t->value->cstring);
+      APP_LOG(APP_LOG_LEVEL_DEBUG, "Password: %s -> %s", password_t->value->cstring, s_settings.Password);
+    }
+
+    Tuple *email_t = dict_find(iterator, MESSAGE_KEY_Email);
+    if (email_t) {
+      strcpy(s_settings.Email, email_t->value->cstring);
+      APP_LOG(APP_LOG_LEVEL_DEBUG, "Email: %s -> %s", email_t->value->cstring, s_settings.Email);
+    }
+  }
   // Message
   Tuple *message_t = dict_find(iterator, MESSAGE_KEY_Message);
   if (message_t) {
@@ -54,12 +75,12 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
         if (username_t) {
           strcpy(s_settings.Username, username_t->value->cstring);
           save_settings(&s_settings);
-          // static char welcome_message[40];
-          // snprintf(welcome_message, 40, "Welcome, %s!", s_settings.Username);
-          // text_layer_set_text(s_main_text_layer, welcome_message);
-          // text_layer_set_text(s_sub_text_layer, "Press select to start");
-          // APP_LOG(APP_LOG_LEVEL_DEBUG, welcome_message);
-          start_game();
+          static char welcome_message[40];
+          snprintf(welcome_message, 40, "Welcome, %s!", s_settings.Username);
+          text_layer_set_text(s_main_text_layer, welcome_message);
+          text_layer_set_text(s_sub_text_layer, "Press select to start");
+          APP_LOG(APP_LOG_LEVEL_DEBUG, welcome_message);
+          // start_game();
         }
       }
     }
@@ -115,7 +136,6 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
                            dir_t->value->uint8);
       }
     }
-
     
     Tuple *user_updated_t = dict_find(iterator, MESSAGE_KEY_Update);
     if (user_updated_t) {
@@ -162,8 +182,9 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
   if (s_state == S_LOGIN) {
     if (!OFFLINE_MODE) {
-      // connect(s_settings.Username);
-      login(s_settings.Username);
+      // TODO: use settings
+      login(s_settings.Username, s_settings.Password, s_settings.Email);
+      // login("CoolGuy0", "password", "email@site.com");
     } else {
       start_game();
     }

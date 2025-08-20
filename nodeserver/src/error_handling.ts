@@ -7,6 +7,7 @@ export const ERROR_CODES = Object.freeze({
     // lookup
     unknown_user: 4003,
     user_exists: 4004,
+    username_taken: 4005,
 
     // other
     generic: 4099
@@ -42,9 +43,16 @@ export function user_exists(res:any) {
     });
 }
 
+export function username_taken(res:any) {
+    res.status(400).json({
+        error: ERROR_CODES.username_taken
+    });
+}
+
+
 export function generic_error(res:any, message:string) {
     res.status(400).json({
-        error: ERROR_CODES.unknown_user,
+        error: ERROR_CODES.generic,
         message: message
     });
 }

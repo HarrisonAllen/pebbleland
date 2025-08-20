@@ -53,7 +53,7 @@ export async function register_user(req:any, res:any) {
     const hashed_password = await bcrypt.hash(password, 10);
 
     const existing_user = await prisma.user.findUnique({ 
-        where: { 
+        where: {
             userID: {
                 accountID: account_id,
                 watchID: watch_id 
@@ -63,7 +63,19 @@ export async function register_user(req:any, res:any) {
 
     if (existing_user != null) {
         return errs.user_exists(res);
-    } 
+    }
+
+    const existing_username = await prisma.user.findFirst({ 
+        where: {
+            playerInfo: {
+                username: username
+            }
+        } 
+    });
+
+    if (existing_username != null) {
+        return errs.username_taken(res);
+    }
     
     try {
         const user = await prisma.user.create({
@@ -83,7 +95,7 @@ export async function register_user(req:any, res:any) {
                 }
             } 
         });  
-        res.status(201).json({ message:"Registration success" });
+        res.status(201).json({ registration_success: true });
     } catch (error:any) {
         console.log(error);
         return errs.generic_error(res, "Registration failed")
@@ -105,7 +117,13 @@ export async function login(req:any, res:any) {
         select: {
             accountInfo: {
                 select: {
-                    password: true
+                    password: true,
+                    email: true
+                }
+            },
+            playerInfo: {
+                select: {
+                    username: true
                 }
             }
         }
@@ -114,12 +132,12 @@ export async function login(req:any, res:any) {
         return errs.unknown_user(res);
     }
 
-    if (!(await bcrypt.compare(password, user.accountInfo.password))) {
+    if (!(await bcrypt.compare(password, user.accountInfo?.password))) {
         return errs.invalid_credentials(res);
     }
 
     // Generate token
     const token = jwt.sign({ account_id:account_id, watch_id:watch_id }, secret_key, { expiresIn: TOKEN_EXPIRATION });
-
-    res.status(200).json({ token: token });
+    
+    res.status(200).json({ token: token, username: user.playerInfo?.username, email: user.accountInfo?.email, });
 }

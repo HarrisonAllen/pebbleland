@@ -3,7 +3,7 @@
 #include <pebble.h>
 #include "data.h"
 
-void login(char *username);
+void login(char *username, char *password, char *email);
 void connect(char *username);
 void disconnect(char *username);
 void broadcast_connect(PlayerData player_data, bool poll);

@@ -29,6 +29,8 @@
       "RequestLogin",
       "LoginSuccessful",
       "Username",
+      "Password",
+      "Email",
       "NewUsername",
       "Connect",
       "Disconnect",

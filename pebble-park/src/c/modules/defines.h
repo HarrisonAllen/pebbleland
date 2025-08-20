@@ -7,7 +7,9 @@
 #define SCROLL_FONT FONT_KEY_GOTHIC_18
 #define SCROLL_TEXT_LEN 200
 
-#define USERNAME_MAX_LEN 8
+#define USERNAME_MAX_LEN 9
+#define PASSWORD_MAX_LEN 30
+#define EMAIL_MAX_LEN 40
 #define SETTINGS_KEY 1
 
 // Gameplay
