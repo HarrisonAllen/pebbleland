@@ -29,7 +29,7 @@ Game *Game_init(GBC_Graphics *graphics, Window *window, ClaySettings *settings);
 
 void Game_destroy(Game *game);
 
-void Game_start(Game *game);
+void Game_start(Game *game, PlayerData player_data);
     
 int Game_get_first_inactive_player_index(Game *game);
     

@@ -1,4 +1,8 @@
-var base_url = "http://10.0.0.47:5001";
+// var base_url = "http://10.0.0.47:5001";
+// var base_url = "192.0.0.2:5001";
+var base_url = "localhost:5001";
+var http_url = "http://" + base_url;
+var ws_url = "ws://" + base_url;
 // var base_url = "localhost:5001";
 
 // Import the Clay package
@@ -16,6 +20,7 @@ var s_password;
 var s_email;
 var s_token = null;
 var login_awaiting_username = false;
+var my_info_dict;
 
 const ACC_MOD = "";
 const WAT_MOD = ACC_MOD;
@@ -36,11 +41,11 @@ const ERROR_CODES = Object.freeze({
 });
 
 const PATHS = Object.freeze({
-    login: base_url + "/login",
-    register: base_url + "/register",
-    my_info: base_url + "/my_info",
-    update_username: base_url + "/update_username",
-    update_email: base_url + "/update_email"
+    login: http_url + "/login",
+    register: http_url + "/register",
+    my_info: http_url + "/my_info",
+    update_username: http_url + "/update_username",
+    update_email: http_url + "/update_email"
 });
 
 // login:
@@ -108,13 +113,17 @@ function send_to_server(dictionary) {
     socket.send(JSON.stringify(dictionary));
 }
 
-function complete_login(username) {
-    dictionary = {
-        "LoginSuccessful": true,
-        "Username": username,
-    };
-    console.log("Logged in as " + username);
-    send_to_pebble(dictionary);
+function complete_login() {
+    // TODO: figure out why username change doesn't complete login, myinfo not requested?
+    if (s_username != null && my_info_dict != null) {
+        my_info_dict["LoginSuccessful"] = true;
+        my_info_dict["Username"] = s_username;
+        console.log("Logged in as " + s_username);
+        console.log(JSON.stringify(my_info_dict));
+        send_to_pebble(my_info_dict);
+    } else {
+        console.log("Not ready yet - User " + s_username + " info " + my_info_dict);
+    }
 }
 
 function login(username, password, email, try_register) {
@@ -136,17 +145,31 @@ function login_response_handler(response, username, password, email, try_registe
         s_token = json_response.token;
         xhrGetRequest(PATHS.my_info, s_token, function(response) {
             console.log("My info: " + response);
+            response = JSON.parse(response);
+            my_info_dict = {
+                "MyInfo": true,
+                "HairStyle": response["user"]["playerInfo"]["hairStyle"],
+                "ShirtStyle": response["user"]["playerInfo"]["shirtStyle"],
+                "PantsStyle": response["user"]["playerInfo"]["pantsStyle"],
+                "HairColor": response["user"]["playerInfo"]["hairColor"],
+                "ShirtColor": response["user"]["playerInfo"]["shirtColor"],
+                "PantsColor": response["user"]["playerInfo"]["pantsColor"],
+                "ShoesColor": response["user"]["playerInfo"]["shoesColor"],
+            };
+            complete_login();
         });
+
         var server_username = json_response.username;
         var server_email = json_response.email;
-        // TODO: consider adding these in
         if (server_username != username) {
-            // // Update username
+            // Update username
             login_awaiting_username = true;
             var username_info = {"username": username};
             xhrPostRequest(PATHS.update_username, username_info, s_token, function(response) {
                 username_update_handler(response);
             });
+        } else {
+            s_username = username;
         }
         if (server_email != email) {
             // Update email
@@ -156,7 +179,7 @@ function login_response_handler(response, username, password, email, try_registe
             });
         }
         if (!login_awaiting_username) {
-            complete_login(username);
+            complete_login();
         }
     } else {
         console.log("Got error: " + json_response.error);
@@ -234,9 +257,9 @@ function username_update_handler(response) {
         if (json_response.username_updated) {
             console.log("Username updated");
             if (login_awaiting_username) {
-                complete_login(json_response.username);
+                s_username = json_response.username;
+                complete_login();
             }
-            // send_to_pebble({"Message": "Username update failed. Reason: username \"" + json_response.new_username + "\" already taken. Using previous username: \"" + json_response.old_username + "\""});
         } else {
             if (json_response.old_username != json_response.new_username) {
                 send_to_pebble({"Message": "Username update failed. Reason: username \"" + json_response.new_username + "\" already taken. Using previous username: \"" + json_response.old_username + "\""});
@@ -307,43 +330,44 @@ function poll() {
     send_to_server(connect_info);
 }
 
-function handle_event(event) {
-    var dictionary;
-    if (event["reason"] == "login_request") {
-        login(set_username);
-    } else if (event["reason"] == "login_success") {
-        dictionary = {
-            // "Message": event["message"],
-            "LoginSuccessful": true,
-            "Username": event["username"],
-            "Source": event["source"]
-        };
-        console.log(event["message"]);
-        send_to_pebble(dictionary);
-    } else if (event["reason"] == "user_connected") {
+function handle_websocket_message(message_json) {
+    var send_dictionary = {};
+    if (message_json.reason == "authentication") {
+        if (message_json.authenticated) {
+            send_dictionary = {
+                "ConnectSuccessful": true
+            };
+        } else {
+            send_dictionary = {
+                "ConnectSuccessful": false,
+                "Message": "Websocket authentication failed!"
+            };
+        }
+        send_to_pebble(send_dictionary);
+    } else if (message_json["reason"] == "user_connected") {
         dictionary = {
             "UserConnected": true,
-            "Username": event["source"],
-            "X": event["x"],
-            "Y": event["y"],
-            "Dir": event["dir"],
-            "HairStyle": event["hair_style"],
-            "ShirtStyle": event["shirt_style"],
-            "PantsStyle": event["pants_style"],
-            "HairColor": event["hair_color"],
-            "ShirtColor": event["shirt_color"],
-            "PantsColor": event["pants_color"],
-            "ShoesColor": event["shoes_color"],
+            "Username": message_json["source"],
+            "X": message_json["x"],
+            "Y": message_json["y"],
+            "Dir": message_json["dir"],
+            "HairStyle": message_json["hair_style"],
+            "ShirtStyle": message_json["shirt_style"],
+            "PantsStyle": message_json["pants_style"],
+            "HairColor": message_json["hair_color"],
+            "ShirtColor": message_json["shirt_color"],
+            "PantsColor": message_json["pants_color"],
+            "ShoesColor": message_json["shoes_color"],
         };
         send_to_pebble(dictionary);
-    } else if (event["reason"] == "user_disconnected") {
+    } else if (message_json["reason"] == "user_disconnected") {
         dictionary = {
             "UserDisconnected": true,
-            "Username": event["source"],
+            "Username": message_json["source"],
         };
         send_to_pebble(dictionary);
-    } else if (event["reason"] == "polled_users") {
-        var users = event["users"];
+    } else if (message_json["reason"] == "polled_users") {
+        var users = message_json["users"];
         console.log("Polling users: ", JSON.stringify(users));
         for (var user in users) {
             console.log("User:", user);
@@ -364,47 +388,45 @@ function handle_event(event) {
             };
             send_to_pebble(dictionary);
         };
-    } else if (event["reason"] == "location") {
+    } else if (message_json["reason"] == "location") {
         dictionary = {
             "Location": true,
-            "Username": event["source"],
-            "X": event["x"],
-            "Y": event["y"],
-            "Dir": event["dir"]
+            "Username": message_json["source"],
+            "X": message_json["x"],
+            "Y": message_json["y"],
+            "Dir": message_json["dir"]
         };
         send_to_pebble(dictionary);
-    } else if (event["reason"] == "update") {
+    } else if (message_json["reason"] == "update") {
         dictionary = {
             "Update": true,
-            "Username": event["source"],
-            "X": event["x"],
-            "Y": event["y"],
-            "Dir": event["dir"],
-            "HairStyle": event["hair_style"],
-            "ShirtStyle": event["shirt_style"],
-            "PantsStyle": event["pants_style"],
-            "HairColor": event["hair_color"],
-            "ShirtColor": event["shirt_color"],
-            "PantsColor": event["pants_color"],
-            "ShoesColor": event["shoes_color"],
+            "Username": message_json["source"],
+            "HairStyle": message_json["hair_style"],
+            "ShirtStyle": message_json["shirt_style"],
+            "PantsStyle": message_json["pants_style"],
+            "HairColor": message_json["hair_color"],
+            "ShirtColor": message_json["shirt_color"],
+            "PantsColor": message_json["pants_color"],
+            "ShoesColor": message_json["shoes_color"],
         };
         send_to_pebble(dictionary);
     } else {
         dictionary = {
-            "Message": event["message"]
+            "Message": message_json["message"]
         };
         send_to_pebble(dictionary);
     }
 }
 
 function connect_websocket() {
-    var constructed_webserver_url = "ws://" + base_url;
-    console.log("trying ws: " + constructed_webserver_url);
+    console.log("trying ws: " + ws_url);
     
-    socket = new WebSocket(constructed_webserver_url);
+    socket = new WebSocket(ws_url);
     
     socket.onopen = function(event) {
         console.log("[open] Connection established");
+        console.log("Authenticating websocket...");
+        send_to_server({"request": "auth", "token": s_token})
     };
     
     socket.onmessage = function(event, isBinary) {
@@ -412,19 +434,20 @@ function connect_websocket() {
         console.log("received server message: ", text.toString());
         var json = JSON.parse(text);
 
-        handle_event(json);
+        handle_websocket_message(json);
     };
     
     socket.onclose = function(event) {
+        console.log("Close: " + JSON.stringify(event));
+        var dictionary = {
+            "Message": "Disconnected from server"
+        };
+        send_to_pebble(dictionary);
         if (event.wasClean) {
-            console.log("[close] Connection closed cleanly, code=" + event_codes[event.code] + " reason=" + event.reason);
-            if (event_codes[event.code] == "LOGIN_FAILURE") {
-                var dictionary = {
-                    "Message": event.reason,
-                    "LoginSuccessful": false
-                };
-                send_to_pebble(dictionary);
+            if (event.code == ERROR_CODES.invalid_token) {
+                console.log("Websocket authentication failure");
             }
+            console.log("[close] Connection closed cleanly");
         } else {
             // e.g. server process killed or network down
             // event.code is usually 1006 in this case
@@ -441,7 +464,7 @@ function disconnect_websocket() {
     if (socket) {
         send_to_server({"request": "close"});
         console.log("Closing websocket...");
-        socket.close(); // This causes error on server, don"t know why, don"t care B) (aka just closing socket on error on server side)
+        socket.close(); // This causes error on server, don't know why, don't care B) (aka just closing socket on error on server side)
     } else {
         console.log("Not connected to websocket!");
     }
@@ -473,7 +496,6 @@ Pebble.addEventListener("appmessage",
         var dict = e.payload;
 		console.log("AppMessage received!", JSON.stringify(dict));
 
-        // TODO: remove this once implemented on watch
         if (dict["RequestLogin"]) {
             login(
                 dict["Username"],
@@ -483,7 +505,6 @@ Pebble.addEventListener("appmessage",
             );
         }
         if (dict["Connect"]) {
-            set_username = dict["Username"];
             connect_websocket();
         }
         if (dict["Disconnect"]) {
@@ -501,10 +522,6 @@ Pebble.addEventListener("appmessage",
         if (dict["Poll"]) {
             poll();
         }
-        // {
-        //     console.log("Unsupported request:", JSON.stringify(dict));
-        // }// Poll users
-        // 
 	}
 );
 

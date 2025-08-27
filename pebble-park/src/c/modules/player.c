@@ -208,6 +208,9 @@ void Player_set_position(Player *player, int x, int y, Direction dir) {
 }
 
 void Player_update(Player *player, PlayerData player_data) {
+    player_data.x = player->data.x;
+    player_data.y = player->data.y;
+    player_data.dir = player->data.dir;
     player->data = player_data;
     Player_render(player);
 }

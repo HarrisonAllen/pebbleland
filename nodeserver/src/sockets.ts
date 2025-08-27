@@ -67,6 +67,13 @@ export async function handle_message(data: any, aws: AppWebSocket) {
     if (request == "auth") {
         if (await authenticate(message, aws)) {
             await aws.load_player_data();
+            aws.ws.send(
+                JSON.stringify({
+                    "reason": "authentication",
+                    "authenticated": true
+                })
+            );
+            users[String(aws.username)] = aws;
             broadcast(
                 Object.assign(
                     {},
@@ -79,13 +86,19 @@ export async function handle_message(data: any, aws: AppWebSocket) {
                     aws.get_player_location()
                 )
             );
+        } else {
+            aws.ws.send(
+                JSON.stringify({
+                    "reason": "authentication",
+                    "authenticated": false
+                })
+            );    
         }
-        return;
     }
 
     if (!aws.authenticated) {
         console.log("Not authenticated!");
-        aws.ws.close(ERROR_CODES.no_token, "Not authenticated!");
+        aws.ws.close(ERROR_CODES.invalid_token, "Not authenticated!");
         return;
     }
 

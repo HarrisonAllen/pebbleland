@@ -4,7 +4,7 @@
 #include "data.h"
 
 void login(char *username, char *password, char *email);
-void connect(char *username);
+void connect();
 void disconnect(char *username);
 void broadcast_connect(PlayerData player_data, bool poll);
 void broadcast_position(int x, int y, Direction dir);

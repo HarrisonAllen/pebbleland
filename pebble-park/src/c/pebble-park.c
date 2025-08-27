@@ -20,6 +20,7 @@ static bool s_connected = false;
 static AppState s_state = S_LOGIN;
 
 static ClaySettings s_settings;
+static PlayerData s_player_data;
 
 // Save the s_settings to persistent storage
 
@@ -30,7 +31,7 @@ static void frame_timer_handle(void* context) {
 }
 
 static void start_game() {
-  Game_start(s_game);
+  Game_start(s_game, s_player_data);
   text_layer_set_text(s_sub_text_layer, "");
   text_layer_set_text(s_main_text_layer, "");
   app_timer_register(FRAME_DURATION, frame_timer_handle, NULL); 
@@ -66,22 +67,52 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
   }
 
   if (s_state == S_LOGIN) {
+    Tuple *my_info_t = dict_find(iterator, MESSAGE_KEY_MyInfo);
+    if (my_info_t) {
+      Tuple *hair_style_t = dict_find(iterator, MESSAGE_KEY_HairStyle);
+      Tuple *shirt_style_t = dict_find(iterator, MESSAGE_KEY_ShirtStyle);
+      Tuple *pants_style_t = dict_find(iterator, MESSAGE_KEY_PantsStyle);
+      Tuple *hair_color_t = dict_find(iterator, MESSAGE_KEY_HairColor);
+      Tuple *shirt_color_t = dict_find(iterator, MESSAGE_KEY_ShirtColor);
+      Tuple *pants_color_t = dict_find(iterator, MESSAGE_KEY_PantsColor);
+      Tuple *shoes_color_t = dict_find(iterator, MESSAGE_KEY_ShoesColor);
+      Tuple *username_t = dict_find(iterator, MESSAGE_KEY_Username);
+      if (hair_style_t) {
+        APP_LOG(APP_LOG_LEVEL_DEBUG, "Hair style: %d", hair_style_t->value->uint8);
+      } else {
+        APP_LOG(APP_LOG_LEVEL_DEBUG, "Hair style missing?");
+        // APP_LOG(APP_LOG_LEVEL_DEBUG, "  %d", hair_style_t);
+      }
+      s_player_data.hair_style = hair_style_t->value->uint8;
+      s_player_data.shirt_style = shirt_style_t->value->uint8;
+      s_player_data.pants_style = pants_style_t->value->uint8;
+      s_player_data.hair_color = hair_color_t->value->uint8;
+      s_player_data.shirt_color = shirt_color_t->value->uint8;
+      s_player_data.pants_color = pants_color_t->value->uint8;
+      s_player_data.shoes_color = shoes_color_t->value->uint8;
+      strcpy(s_player_data.username, username_t->value->cstring);
+    }
+    
     Tuple *login_success_t = dict_find(iterator, MESSAGE_KEY_LoginSuccessful);
     if (login_success_t) {
       if (login_success_t->value->int32 == 1) {
         // TODO:
-        // * 
-        Tuple *username_t = dict_find(iterator, MESSAGE_KEY_Username);
-        if (username_t) {
-          strcpy(s_settings.Username, username_t->value->cstring);
-          save_settings(&s_settings);
-          static char welcome_message[40];
-          snprintf(welcome_message, 40, "Welcome, %s!", s_settings.Username);
-          text_layer_set_text(s_main_text_layer, welcome_message);
-          text_layer_set_text(s_sub_text_layer, "Press select to start");
-          APP_LOG(APP_LOG_LEVEL_DEBUG, welcome_message);
-          // start_game();
-        }
+        // * turn back into real app!!
+          // save_settings(&s_settings);
+          // static char welcome_message[40];
+          // snprintf(welcome_message, 40, "Welcome, %s!", s_settings.Username);
+          // text_layer_set_text(s_main_text_layer, welcome_message);
+          // text_layer_set_text(s_sub_text_layer, "Press select to start");
+          // APP_LOG(APP_LOG_LEVEL_DEBUG, welcome_message);
+          connect();
+      }
+    }
+
+    Tuple *connect_success_t = dict_find(iterator, MESSAGE_KEY_ConnectSuccessful);
+    if (connect_success_t) {
+      if (connect_success_t->value->int32 == 1) {
+        start_game();
+        APP_LOG(APP_LOG_LEVEL_DEBUG, "Websocket connected!");
       }
     }
   }
@@ -140,9 +171,6 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
     Tuple *user_updated_t = dict_find(iterator, MESSAGE_KEY_Update);
     if (user_updated_t) {
       Tuple *username_t = dict_find(iterator, MESSAGE_KEY_Username);
-      Tuple *x_t = dict_find(iterator, MESSAGE_KEY_X);
-      Tuple *y_t = dict_find(iterator, MESSAGE_KEY_Y);
-      Tuple *dir_t = dict_find(iterator, MESSAGE_KEY_Dir);
       Tuple *hair_style_t = dict_find(iterator, MESSAGE_KEY_HairStyle);
       Tuple *shirt_style_t = dict_find(iterator, MESSAGE_KEY_ShirtStyle);
       Tuple *pants_style_t = dict_find(iterator, MESSAGE_KEY_PantsStyle);
@@ -151,9 +179,6 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
       Tuple *pants_color_t = dict_find(iterator, MESSAGE_KEY_PantsColor);
       Tuple *shoes_color_t = dict_find(iterator, MESSAGE_KEY_ShoesColor);
       PlayerData player_data = {
-        .x = x_t->value->int16,
-        .y = y_t->value->int16,
-        .dir = dir_t->value->uint8,
         .hair_style = hair_style_t->value->uint8,
         .shirt_style = shirt_style_t->value->uint8,
         .pants_style = pants_style_t->value->uint8,
@@ -182,9 +207,8 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
   if (s_state == S_LOGIN) {
     if (!OFFLINE_MODE) {
-      // TODO: use settings
       login(s_settings.Username, s_settings.Password, s_settings.Email);
-      // login("CoolGuy0", "password", "email@site.com");
+      // login("Basalt", "password", "email@site.com");
     } else {
       start_game();
     }

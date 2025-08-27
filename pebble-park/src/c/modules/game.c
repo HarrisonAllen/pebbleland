@@ -46,7 +46,7 @@ void Game_destroy(Game *game) {
     }
 }
 
-void Game_start(Game *game) {
+void Game_start(Game *game, PlayerData player_data) {
     // Load basic map
     // GBC_Graphics_set_bg_palette_array(game->graphics, 0, BLANK_BG_PALETTE);
     window_set_background_color(game->window, GColorBlack);
@@ -56,22 +56,6 @@ void Game_start(Game *game) {
     GBC_Graphics_load_entire_tilesheet_into_vram(game->graphics, CLOTHES_TILESHEET, CLOTHES_VRAM_START, PLAYER_VRAM);
 
     // TODO: load in hair, clothes, colors from web
-    PlayerData player_data = {
-        .hair_style = rand()%HAIR_COUNT,
-        .shirt_style = rand()%CLOTHES_NUM_SHIRTS, 
-        .pants_style = rand()%CLOTHES_NUM_PANTS,
-    #if defined(PBL_COLOR)
-        .hair_color = rand()%NUM_COLORS,
-        .shirt_color = rand()%NUM_COLORS,
-        .pants_color = rand()%NUM_COLORS,
-        .shoes_color = rand()%NUM_COLORS,
-    #else
-        .hair_color = 0,
-        .shirt_color = 0,
-        .pants_color = 0,
-        .shoes_color = 0,
-    #endif // defined(PBL_COLOR)
-    };
     strcpy(player_data.username, game->settings->Username);
     
     Game_load_player(game, 0, player_data);

@@ -5,27 +5,22 @@ void login(char *username, char *password, char *email) {
     AppMessageResult result = app_message_outbox_begin(&iter);
 
     if (result == APP_MSG_OK) {
-        // what to do
         dict_write_uint8(iter, MESSAGE_KEY_RequestLogin, 1);
         dict_write_cstring(iter, MESSAGE_KEY_Username, username);
         dict_write_cstring(iter, MESSAGE_KEY_Password, password);
         dict_write_cstring(iter, MESSAGE_KEY_Email, email);
 
-        // Send the message
         result = app_message_outbox_send();
     }
 }
 
-void connect(char *username) {
+void connect() {
     DictionaryIterator *iter;
     AppMessageResult result = app_message_outbox_begin(&iter);
 
     if (result == APP_MSG_OK) {
-        // what to do
         dict_write_uint8(iter, MESSAGE_KEY_Connect, 1);
-        dict_write_cstring(iter, MESSAGE_KEY_Username, username);
 
-        // Send the message
         result = app_message_outbox_send();
     }
 }
@@ -35,11 +30,9 @@ void disconnect(char *username) {
     AppMessageResult result = app_message_outbox_begin(&iter);
 
     if (result == APP_MSG_OK) {
-        // what to do
         dict_write_uint8(iter, MESSAGE_KEY_Disconnect, 1);
         dict_write_cstring(iter, MESSAGE_KEY_Username, username);
 
-        // Send the message
         result = app_message_outbox_send();
     }
 }
@@ -49,7 +42,6 @@ void broadcast_connect(PlayerData player_data, bool poll) {
     AppMessageResult result = app_message_outbox_begin(&iter);
 
     if (result == APP_MSG_OK) {
-        // what to do
         if (poll) {
             dict_write_uint8(iter, MESSAGE_KEY_Poll, 1);
         }
@@ -65,7 +57,6 @@ void broadcast_connect(PlayerData player_data, bool poll) {
         dict_write_uint8(iter, MESSAGE_KEY_PantsColor, player_data.pants_color);
         dict_write_uint8(iter, MESSAGE_KEY_ShoesColor, player_data.shoes_color);
 
-        // Send the message
         result = app_message_outbox_send();
     }
 }
@@ -75,13 +66,11 @@ void broadcast_position(int x, int y, Direction dir) {
     AppMessageResult result = app_message_outbox_begin(&iter);
 
     if (result == APP_MSG_OK) {
-        // what to do
         dict_write_uint8(iter, MESSAGE_KEY_Location, 1);
         dict_write_int16(iter, MESSAGE_KEY_X, x);
         dict_write_int16(iter, MESSAGE_KEY_Y, y);
         dict_write_uint8(iter, MESSAGE_KEY_Dir, dir);
 
-        // Send the message
         result = app_message_outbox_send();
     }
 }
@@ -91,7 +80,6 @@ void broadcast_update(PlayerData player_data) {
     AppMessageResult result = app_message_outbox_begin(&iter);
 
     if (result == APP_MSG_OK) {
-        // what to do
         dict_write_uint8(iter, MESSAGE_KEY_Update, 1);
         dict_write_int16(iter, MESSAGE_KEY_X, player_data.x);
         dict_write_int16(iter, MESSAGE_KEY_Y, player_data.y);
@@ -104,7 +92,6 @@ void broadcast_update(PlayerData player_data) {
         dict_write_uint8(iter, MESSAGE_KEY_PantsColor, player_data.pants_color);
         dict_write_uint8(iter, MESSAGE_KEY_ShoesColor, player_data.shoes_color);
 
-        // Send the message
         result = app_message_outbox_send();
     }
 }
@@ -114,10 +101,8 @@ void poll_users() {
     AppMessageResult result = app_message_outbox_begin(&iter);
 
     if (result == APP_MSG_OK) {
-        // what to do
         dict_write_uint8(iter, MESSAGE_KEY_Poll, 1);
 
-        // Send the message
         result = app_message_outbox_send();
     }
 }
